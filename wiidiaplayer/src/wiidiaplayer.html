@@ -1,0 +1,29 @@
+<!-- saved from url=(0013)about:internet -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>wiidiaplayer</title>
+</head>
+<body bgcolor="#000000" style="padding: 0px; margin: 0px;">
+<script>
+	objectstr = '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="800" height="450" id="wiidiaplayer" align="middle">'
+	objectstr +='<param name="allowScriptAccess" value="sameDomain" />'
+	objectstr +='<param name="movie" value="../bin/wiidiaplayer.swf?SERVER=10.1.0.20" /><param name="quality" value="high" /><embed src="../bin/wiidiaplayer.swf?SERVER=10.1.0.20" quality="high" width="800" height="450" name="wiidiaplayer" align="middle" allowScriptAccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />'
+	objectstr +='</object>'
+	
+	window.setTimeout(function () {myframe.document.open(); myframe.document.write(objectstr); myframe.document.close()}, 2000);
+</script>
+<iframe width=850 height=500 name="myframe">
+</iframe>
+<a href="javascript: myframe.document.open(); myframe.document.write(''); myframe.document.close()">stopvideo</a>
+<a href="javascript: myframe.document.open(); myframe.document.write(objectstr); myframe.document.close()">reload</a>
+
+
+<hr />
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="800" height="450" id="flashinspector" align="middle">
+<param name="allowScriptAccess" value="sameDomain" />
+<param name="movie" value="FlashInspector.swf" /><param name="quality" value="high" /><param name="bgcolor" value="#ffffff" /><embed src="FlashInspector.swf" quality="high" bgcolor="#ffffff" width="800" height="450" name="wiidiaplayer" align="middle" allowScriptAccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+</object>
+</body>
+</html>
