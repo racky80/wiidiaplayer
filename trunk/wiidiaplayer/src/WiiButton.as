@@ -7,25 +7,29 @@ class WiiButton extends MovieClip {
 	private var width:Number;
 	private var height:Number;
 	private var thiscount:Number;
+	private var handler:Function;
+	private var drawn:Boolean;
+	
 
 	private var button_mc:MovieClip;
 	private var button_text:TextField;
 	
 	public function WiiButton(text:String, width:Number, height:Number) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
+		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
-		this.oLogger.info("__init__ "+__CLASS__+"("+text+")");
+		this.oLogger.debug("__init__ "+__CLASS__+"("+text+")");
 		thiscount=WiiButton.count++;
 		
 		this.text = text
 		this.width = width
 		this.height = height
+		drawn = false
 	}
 	
 	public function draw(mc:MovieClip) {
 		mc.createEmptyMovieClip("wiibutton_"+thiscount,mc.getNextHighestDepth());
 		button_mc = mc["wiibutton_"+thiscount];
-		oLogger.info(button_mc)
 		
 		button_mc.lineStyle(1, 0x3f3fff)
 		button_mc.beginFill(0xafafcf);
@@ -62,11 +66,24 @@ class WiiButton extends MovieClip {
 		WiiButton.makeIntoGrowingButton(button_mc);
 		// now get the button into place
 		
+		drawn = true
+		button_mc.onPress = handler
 	}
 	
 	public function setPosition(x:Number, y:Number) {
 		button_mc._x = x;
 		button_mc._y = y;
+	}
+	
+	public function setClickHandler(handler:Function) {
+		this.handler = handler
+		if (drawn) {
+			button_mc.onPress = handler
+		}
+	}
+	
+	public function removeMovieClip() {
+		button_mc.removeMovieClip()
 	}
 	
 	static function makeIntoGrowingButton(mc:MovieClip) {
@@ -86,6 +103,8 @@ class WiiButton extends MovieClip {
 		}
 
 		mc.onRollOver = function() {
+			// put this button on the top of the pile
+			this.swapDepths(this._parent.getNextHighestDepth()-1)
 			this.targetscaling = Config.WIIBUTTON_MAXSCALE;
 		}
 

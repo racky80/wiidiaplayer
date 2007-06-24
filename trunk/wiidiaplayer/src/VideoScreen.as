@@ -11,6 +11,7 @@
 
 	public function VideoScreen() {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
+		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		this.oLogger.info("__init__ "+__CLASS__);
 		this.titlebar = new Titlebar();
