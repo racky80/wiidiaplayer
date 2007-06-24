@@ -8,23 +8,25 @@
 	
 	
 	function Wiidiaplayer(rootclip:MovieClip) {
+		var self:Wiidiaplayer = this
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
+		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		this.oLogger.info("__init__ "+__CLASS__);
+		var sound:Sound = new Sound()
+		this.oLogger.info("volume "+sound.getVolume());
 
 		this.root=rootclip;
 		
 		video = new VideoScreen();
 		video.draw(this.root);
 	//	video.playTest();
-	
-		fileSelector = new FileSelector()
+		
+		
+		fileSelector = new FileSelector(function(file:String) {self.oLogger.info("playing "+file); self.video.play(file); self.fileSelector.close()})
+		
 		fileSelector.draw(root)
 		fileSelector.open();
-		
-//		var but:WiiButton = new WiiButton("hallo daar dit ", 200, 30);
-//		but.draw(this.root);
-//		but.setPosition(200,200);
 	}
 	
 	
