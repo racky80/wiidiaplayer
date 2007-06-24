@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AS2Build>
+  <buildItem class="Wiidiaplayer" active="true" runnable="false">
+    <in>src/wiidiaplayer.swf</in>
+    <out>wiidiaplayer.swf</out>
+    <movie width="800" height="450" fps="12" version="7">
+      <trace>Log.addMessage</trace>
+    </movie>
+    <compiler infer="false" keep="false" wimp="true" mx="true" strict="true" />
+    <parameters />
+  </buildItem>
+</AS2Build>
+

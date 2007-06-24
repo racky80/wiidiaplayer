@@ -1,0 +1,13 @@
+      <movie width="320" height="300" version="8">
+        <frame>
+          <library>
+            <clip id="VideoDisplay" name="VideoDisplay">
+              <frame>
+                <video id="VideoSurface" width="320" height="240" />
+                <place id="VideoSurface" name="video" />
+              </frame>
+            </clip>
+          </library>
+        </frame>
+      </movie>
+
