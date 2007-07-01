@@ -1,6 +1,7 @@
 from twisted.web import server, resource, static
 from twisted.internet import reactor, protocol, error
 import os, urllib
+import rtmp
 
 
 class ProcessPassthroughprotocol(protocol.ProcessProtocol):
@@ -93,10 +94,11 @@ class GetFile(WiiServerExternalprogramResource):
     def getProcessPassthroughClass(self):
         return ProcessPassthroughprotocol
 
-root = static.File("/var/www/wiidiaserver/root")
+root = static.File("root")
 root.putChild('getdir',GetDir())
 root.putChild('getfile',GetFile())
 root.putChild('getinfo',GetInfo())
 site = server.Site(root)
+reactor.listenTCP(1935, rtmp.RTMPServerFactory( ))
 reactor.listenTCP(80, site)
 reactor.run()
