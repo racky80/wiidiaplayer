@@ -1,8 +1,8 @@
 import cStringIO
-import logging, time, copy
+import logging, time
 from twisted.internet import reactor, protocol, task
 from amf import amf0
-import rtmputil, flv
+import rtmputil, flv, bufferedstringstream
 
 class ProcessProtocolBufferWriter(protocol.ProcessProtocol):
 
@@ -65,8 +65,8 @@ class RTMPProtocol(protocol.Protocol):
                   }
 
     def __init__(self):
-        self.input = rtmputil.FancyReader(BufferedStringStream())
-        self.output = rtmputil.FancyWriter(BufferedStringStream())
+        self.input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
+        self.output = rtmputil.FancyWriter(bufferedstringstream.BufferedStringStream())
         self.sChannel = {}
         self.read_chunk_size=128
         self.write_chunk_size=128
@@ -95,7 +95,7 @@ class RTMPProtocol(protocol.Protocol):
         logging.info("Lost connection to %s." % self.transport.getPeer( ).host);
         
     def dataReceived(self, data):
-        logging.debug("Received: \n%s"%getBinaryStream(data))
+        logging.debug("Received: \n%s"%rtmputil.getBinaryStream(data))
         self.input.write(data)
         self.checkForParsableContent()
         
@@ -105,7 +105,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readWelcomeHandshake()
-                except BufferedStringStreamInsufficientDataException:
+                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -116,7 +116,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readReplyHandshake()
-                except BufferedStringStreamInsufficientDataException:
+                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -128,7 +128,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readAMFPacket()
-                except BufferedStringStreamInsufficientDataException:
+                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -161,7 +161,7 @@ class RTMPProtocol(protocol.Protocol):
      
     def handleAMFPacket(self, amfpacket):
         if amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCALL:
-            logging.debug("Decoding call: \n%s"%getBinaryStream(amfpacket["data"]))
+            logging.debug("Decoding call: \n%s"%rtmputil.getBinaryStream(amfpacket["data"]))
             input = cStringIO.StringIO(amfpacket["data"])
             callobject = {}
             type = amf0.read_byte(input)
@@ -185,8 +185,8 @@ class RTMPProtocol(protocol.Protocol):
                 raise RTMPProtocolUnknownRemoteCallableException("Received unknown remotecallable: %s"%callobject["name"])
             remotecallable(amfpacket["header"], callobject)
         elif amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCOMMAND:
-            logging.debug("Decoding command: \n%s"%getBinaryStream(amfpacket["data"]))
-            input = rtmputil.FancyReader(BufferedStringStream())
+            logging.debug("Decoding command: \n%s"%rtmputil.getBinaryStream(amfpacket["data"]))
+            input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
             input.write(amfpacket["data"])
             commandkind = input.readUInt16B()
             streamid = input.readUInt32B()
@@ -198,7 +198,7 @@ class RTMPProtocol(protocol.Protocol):
                 raise RTMPProtocolUnknownCommandException("Received unknown command: %d"%commandkind)
             command(streamid, input)
         elif amfpacket["header"]["kind"] == RTMPProtocol.KIND_KBYTESREADED:
-            input = rtmputil.FancyReader(BufferedStringStream())
+            input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
             input.write(amfpacket["data"])
             bytesreaded = input.readUInt32B()
             logging.debug("Bytes readed: %d"%bytesreaded)
@@ -207,12 +207,12 @@ class RTMPProtocol(protocol.Protocol):
     
     def flushOutput(self):
         data = self.output.readAll()
-#        logging.debug("Sending: \n%s"%getBinaryStream(data))
+#        logging.debug("Sending: \n%s"%rtmputil.getBinaryStream(data))
         self.transport.write(data)
         self.output.reset()
     
     def sendCommand(self, commandkind, streamid):
-        stream = rtmputil.FancyWriter(BufferedStringStream())
+        stream = rtmputil.FancyWriter(bufferedstringstream.BufferedStringStream())
         stream.writeUInt16B(commandkind);
         stream.writeUInt32B(streamid);
 
@@ -244,7 +244,7 @@ class RTMPProtocol(protocol.Protocol):
         }
         self.writeHeader(header)
         headerbyte = self.getHeaderSingleByte(header)
-        partitioneddata = chr(headerbyte).join(split_len(data, self.write_chunk_size))
+        partitioneddata = chr(headerbyte).join(rtmputil.split_len(data, self.write_chunk_size))
         self.output.write(partitioneddata)
         self.flushOutput()
         
@@ -286,8 +286,8 @@ class RTMPProtocol(protocol.Protocol):
     def readReplyHandshake(self,):
         handshake = self.input.read(RTMPProtocol.HANDSHAKELENGTH)
 #        if not self.handshake == handshake:
-#            logging.debug("handshake: \n%s"%getBinaryStream(self.handshake))
-#            logging.debug("handshake2: \n%s"%getBinaryStream(handshake))
+#            logging.debug("handshake: \n%s"%rtmputil.getBinaryStream(self.handshake))
+#            logging.debug("handshake2: \n%s"%rtmputil.getBinaryStream(handshake))
 #            raise RTMPProtocolHandshakeException("Replyhandshake does not match initial handshake")
     
     def getHeaderSize(self, firstbyte):
@@ -358,7 +358,7 @@ class RTMPProtocol(protocol.Protocol):
         #for now :)
         filename = "/mnt/media/%s"%filename
         streamid = header["src_dst"]
-        buffer = BufferedStringStream()
+        buffer = bufferedstringstream.BufferedStringStream()
         processProtocol=ProcessProtocolBufferWriter(buffer);
         reactor.spawnProcess(processProtocol, 'convertvideo.sh', ['convertvideo.sh', filename])
         assert self.sStream[streamid]["play"] == None
@@ -440,7 +440,7 @@ class RTMPProtocol(protocol.Protocol):
                     self.sStream[streamid]["play"]["buffer"].transactionStart()
                     try:
                         chunk = self.sStream[streamid]["play"]["reader"].readChunk()
-                    except BufferedStringStreamInsufficientDataException:
+                    except bufferedstringstream.BufferedStringStreamInsufficientDataException:
                         self.sStream[streamid]["play"]["buffer"].transactionRollback()
                         if self.sStream[streamid]["play"]["processProtocol"].ended:
                             self.sStream[streamid]["play"]=None
@@ -453,113 +453,10 @@ class RTMPProtocol(protocol.Protocol):
                         break;
                 
 
-def split_len(seq, length):
-     return [seq[i:i+length] for i in range(0, len(seq), length)]
- 
-def getBinaryStream(str):
-    PRINT_LENGTH=16
-    s = []
-    for i in range(0,len(str),PRINT_LENGTH):
-        aChar = []
-        aInt = []
-        for j in range(i,min(i+PRINT_LENGTH, len(str))):
-            if ord(str[j]) > 32 and ord(str[j]) < 128:
-                aChar.append(str[j]);
-            else :
-                aChar.append(".");
-            aInt.append(ord(str[j]));
-        hextext = ("%02x "*len(aInt))%tuple(aInt);
-        hextext = "  ".join(split_len(hextext,3*PRINT_LENGTH/2))
-        hrtext = ("%s "*len(aInt))%tuple(aChar);
-        hrtext = "  ".join(split_len(hrtext,2*PRINT_LENGTH/2))
-        format = "%-"+("%d"%(3*PRINT_LENGTH+2))+"s        %s";
-        s.append(("0x%04x  "+format)%(i, hextext, hrtext))
-    return "\n".join(s)
-    
+   
 
 
-class BufferedStringStream:
-    def __init__(self):
-        self.reset()
-    
-    def reset(self):
-        self.buffer={"content":{},
-                     "pointer": [0,0,0],
-                     "bytesAvailable":0,
-                     }
-        self.bufferBeforeTransaction = []
-        
-    def read(self,bytes):
-        if bytes > self.bytesAvailable():
-            raise BufferedStringStreamInsufficientDataException()
-        toread=int(bytes)
-        readeddata = []
-#        print(("start (%d): "%toread)+self.getStatus())
-        while len(self.buffer["content"][self.buffer["pointer"][0]]) < self.buffer["pointer"][1]+toread:
-            datachunk = self.buffer["content"][self.buffer["pointer"][0]][self.buffer["pointer"][1]:]
-            toread -= len(datachunk)
-            readeddata.append(datachunk)
-#            self.buffer["content"][self.buffer["pointer"][0]] = None # clean up to save space
-            self.buffer["pointer"][0] += 1
-            self.buffer["pointer"][1] = 0
-#            print(("looping (%d): "%toread)+self.getStatus())
-        readeddata.append(self.buffer["content"][self.buffer["pointer"][0]][self.buffer["pointer"][1]:self.buffer["pointer"][1]+toread])
-        self.buffer["pointer"][1] += toread
-        toread=0
-        self.buffer["bytesAvailable"] -= bytes
-#        print(("done (%d): "%toread)+self.getStatus())
-#        print("Requested %d data, got %d"%(bytes,len("".join(readeddata))))
-        return "".join(readeddata)
-    
-    def readAll(self):
-        return self.read(self.bytesAvailable())
-    
-    def transactionStart(self):
-        self.bufferBeforeTransaction.append(copy.deepcopy((self.buffer["pointer"], self.buffer["bytesAvailable"])))
-    
-    def transactionCommit(self):
-        if len(self.bufferBeforeTransaction) == 0:
-            raise BufferedStringStreamTransactionException("Not in transaction")
-        self.bufferBeforeTransaction.pop()
-    
-    def transactionRollback(self):
-        if len(self.bufferBeforeTransaction) == 0:
-            raise BufferedStringStreamTransactionException("Not in transaction")
-        self.buffer["pointer"],self.buffer["bytesAvailable"] = self.bufferBeforeTransaction.pop()
-    
-    def bytesAvailable(self):
-        return self.buffer["bytesAvailable"]
-        
-    def write(self, data):
-        self.buffer["content"][self.buffer["pointer"][2]]=data
-        self.buffer["pointer"][2]+=1
-        self.buffer["bytesAvailable"] += len(data)
-        
-    def getStatus(self):
-        s="pointers: "+repr(self.buffer["pointer"])+"\nbuffers: \n";
-        for i in self.buffer["content"]:
-            s+="  %d: %d\n"%(i, len(self.buffer["content"][i]))
-        return s;
-        
-class BufferedStringStreamInsufficientDataException(Exception): pass
-class BufferedStringStreamTransactionException(Exception): pass
 
 class RTMPProtocolHandshakeException (Exception): pass
 class RTMPProtocolUnknownCommandException (Exception): pass
 class RTMPProtocolUnknownRemoteCallableException (Exception): pass
-
-class RTMPServerFactory(protocol.ServerFactory):
-    protocol = RTMPProtocol
-
-#logging.basicConfig(level=logging.DEBUG)
-
-#f=open("/tmp/amf","r")
-#amfstring = f.read()
-#f.close();
-
-#test = RTMPProtocol()
-#test.state = RTMPProtocol.STATE_EXPECTAMF
-#test.dataReceived(amfstring)
-
-#reactor.listenTCP(1935, RTMPServerFactory( ))
-#reactor.run( )

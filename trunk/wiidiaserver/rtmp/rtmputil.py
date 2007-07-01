@@ -70,3 +70,28 @@ class FancyWriter:
     
 class FancyReaderNoReadMethodException(Exception): pass
 class FancyWriterNoWriteMethodException(Exception): pass
+
+
+def split_len(seq, length):
+     return [seq[i:i+length] for i in range(0, len(seq), length)]
+ 
+def getBinaryStream(str):
+    PRINT_LENGTH=16
+    s = []
+    for i in range(0,len(str),PRINT_LENGTH):
+        aChar = []
+        aInt = []
+        for j in range(i,min(i+PRINT_LENGTH, len(str))):
+            if ord(str[j]) > 32 and ord(str[j]) < 128:
+                aChar.append(str[j]);
+            else :
+                aChar.append(".");
+            aInt.append(ord(str[j]));
+        hextext = ("%02x "*len(aInt))%tuple(aInt);
+        hextext = "  ".join(split_len(hextext,3*PRINT_LENGTH/2))
+        hrtext = ("%s "*len(aInt))%tuple(aChar);
+        hrtext = "  ".join(split_len(hrtext,2*PRINT_LENGTH/2))
+        format = "%-"+("%d"%(3*PRINT_LENGTH+2))+"s        %s";
+        s.append(("0x%04x  "+format)%(i, hextext, hrtext))
+    return "\n".join(s)
+ 
