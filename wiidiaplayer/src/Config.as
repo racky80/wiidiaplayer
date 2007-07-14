@@ -4,8 +4,8 @@
 class Config {
 	static var GLOBAL_LOGLEVEL:LuminicBox.Log.Level = LuminicBox.Log.Level.INFO
 	
-	static var GETDIR_SERVER_URL:String = "http://10.1.0.20/getdir/";
-	static var RTMP_SERVER_URL:String = "rtmp://10.1.0.20";
+	static var GETDIR_SERVER_URL:String = "http://"+_root.SERVER+"/getdir/";
+	static var RTMP_SERVER_URL:String = "rtmp://"+_root.SERVER;
 	static var RTMP_TESTFLV:String = "simps-0000";
 
 	static var TITLEBAR_FONTSIZE:Number=30;
@@ -16,13 +16,26 @@ class Config {
 	static var TITLEBAR_APPEAR_SPEED:Number=10;
 	static var TITLEBAR_DISAPPEAR_SPEED:Number=5;
 	
+	static var TITLEBAR_FILESELECTOR_BUTTON_WIDTH:Number=50;
+	static var TITLEBAR_FILESELECTOR_BUTTON_HEIGHT:Number=30;
+	static var TITLEBAR_FILESELECTOR_X:Number=Stage.width-Config.TITLEBAR_FILESELECTOR_BUTTON_WIDTH*.5-Config.TITLEBAR_PADDING;
+	static var TITLEBAR_FILESELECTOR_Y:Number=Config.TITLEBAR_PADDING+Config.TITLEBAR_FILESELECTOR_BUTTON_HEIGHT*.5;
+
+	static var TITLEBAR_PAUSE_BUTTON_WIDTH:Number=50;
+	static var TITLEBAR_PAUSE_BUTTON_HEIGHT:Number=30;
+	static var TITLEBAR_PAUSE_X:Number=Stage.width-Config.TITLEBAR_FILESELECTOR_BUTTON_WIDTH*1.5-2*Config.TITLEBAR_PADDING;
+	static var TITLEBAR_PAUSE_Y:Number=Config.TITLEBAR_PADDING+Config.TITLEBAR_FILESELECTOR_BUTTON_HEIGHT*.5;
+	
+	
 	static var WIIBUTTON_MAXSCALE:Number=170;
 	static var WIIBUTTON_SCALE_SPEED:Number=30;
 
-	static var WIIBUTTON_FONTSIZE:Number=15;
-	static var WIIBUTTON_FLASHINTERNAL_TEXTFIELD_PADDING:Number=Config.WIIBUTTON_FONTSIZE*.15;
-	static var WIIBUTTON_FONTCOLOR:Number=0x000000;
+	static var WIIBUTTON_ENABLED_FONTSIZE:Number=15;
+	static var WIIBUTTON_ENABLED_FONTCOLOR:Number=0x000000;
+	static var WIIBUTTON_DISABLED_FONTSIZE:Number=15;
+	static var WIIBUTTON_DISABLED_FONTCOLOR:Number=0x7F7F7F;
 	static var WIIBUTTON_PADDING:Number=3;
+	static var WIIBUTTON_FLASHINTERNAL_TEXTFIELD_PADDING:Number=Config.WIIBUTTON_ENABLED_FONTSIZE*.15;
 	
 	static var FILESELECTOR_X:Number = 50
 	static var FILESELECTOR_Y:Number = 50

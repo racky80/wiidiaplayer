@@ -53,16 +53,16 @@ class FileSelector {
 		title_text.autoSize = "left"
 		
 		
-		next_btn = new WiiButton("-->", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
-		next_btn.draw(fileselector_mc)
+		next_btn = new WiiButton(">>", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
+		next_btn.draw(fileselector_mc, false)
 		next_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING-Config.FILESELECTOR_NAVBUTTON_WIDTH*.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		next_btn.setClickHandler(function() {self.pagenr++; self.drawButtons()})
-		previous_btn = new WiiButton("<--", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
-		previous_btn.draw(fileselector_mc)
+		previous_btn = new WiiButton("<<", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
+		previous_btn.draw(fileselector_mc, false)
 		previous_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*2-Config.FILESELECTOR_NAVBUTTON_WIDTH*1.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		previous_btn.setClickHandler(function() {self.pagenr--; self.drawButtons()})
-		up_btn = new WiiButton("up", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
-		up_btn.draw(fileselector_mc)
+		up_btn = new WiiButton("^^", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
+		up_btn.draw(fileselector_mc, false)
 		up_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*3-Config.FILESELECTOR_NAVBUTTON_WIDTH*2.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		up_btn.setClickHandler(function() {self.retrieveAndShowDirContents(Util.dirname(self.currentpath))})
 		
@@ -114,7 +114,7 @@ class FileSelector {
 			var sDir:Object = asDir[i]
 			var btn:WiiButton = new WiiButton(sDir["name"], Config.FILESELECTOR_FILEBUTTON_WIDTH, Config.FILESELECTOR_FILEBUTTON_HEIGHT)
 			if (sDir["type"] == 'file') {
-				btn.setClickHandler(function (file:String):Function {return function() {self.fileSelected(file) }}(self.currentpath+sDir["name"]))
+				btn.setClickHandler(function (file:String, mybtn:WiiButton):Function {return function() {self.fileSelected(file); mybtn.resetScale(); }}(self.currentpath+sDir["name"], btn))
 			}else { //dir
 				btn.setClickHandler(function (dir:String):Function {return function() {self.retrieveAndShowDirContents(dir) }}(self.currentpath+sDir["name"]+'/'))
 			}
@@ -133,16 +133,19 @@ class FileSelector {
 		var btn:Object;
 		while (btn = visiblebuttons.pop()) {
 			btn.removeMovieClip();
-			oLogger.info(btn)
 		}
 		var start:Number = pagenr*Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY*Config.FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY
 		var end:Number = Math.min(filebuttons.length, (pagenr+1)*Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY*Config.FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY)
 		for (var i:Number=start;i<end;i++) {
-			filebuttons[i].draw(fileselector_mc)
+			filebuttons[i].draw(fileselector_mc, true)
 			visiblebuttons.push(filebuttons[i])
 			var pos:Object = this.getPositionForNextButton(i-start)
 			filebuttons[i].setPosition(pos.x, pos.y)
 		}
+		
+		next_btn.setEnabled(end < filebuttons.length)
+		previous_btn.setEnabled(pagenr>0)
+		up_btn.setEnabled(currentpath != "/")
 	}
 	
 	
