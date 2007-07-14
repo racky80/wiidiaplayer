@@ -1,37 +1,9 @@
 import cStringIO
-import logging, time
+import logging, time, os
 from twisted.internet import reactor, protocol, task
 from amf import amf0
-import rtmputil, flv, bufferedstringstream
-
-class ProcessProtocolBufferWriter(protocol.ProcessProtocol):
-
-    def __init__(self, buffer):
-        self.buffer=buffer
-        self.ended=False
-
-    def connectionMade(self): pass
-
-    def outReceived(self, data):
-#        logging.debug("stdout: %s"%data)
-        self.buffer.write(data)
-#        if self.request.connectionclosed:
-#            self.transport.closeStdout()
-#            print "killed"
-#        self.request.write(data)
-        
-    def errReceived(self,data):
-        logging.error("stderr: %s"%data)
-        
-    def outConnectionLost(self): pass
-    def errConnectionLost(self): pass
-    def inConnectionLost(self): pass
-    
-    def processEnded(self, reason):
-        self.ended=True
-#        self.request.finish();
-#        logging.info("Process ended: %s"%reason);
-
+import util
+import flvstreamprovider
 
 class RTMPProtocol(protocol.Protocol):
     HANDSHAKELENGTH=0x600
@@ -65,8 +37,8 @@ class RTMPProtocol(protocol.Protocol):
                   }
 
     def __init__(self):
-        self.input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
-        self.output = rtmputil.FancyWriter(bufferedstringstream.BufferedStringStream())
+        self.input = util.general.FancyReader(util.bufferedstringstream.BufferedStringStream())
+        self.output = util.general.FancyWriter(util.bufferedstringstream.BufferedStringStream())
         self.sChannel = {}
         self.read_chunk_size=128
         self.write_chunk_size=128
@@ -95,7 +67,7 @@ class RTMPProtocol(protocol.Protocol):
         logging.info("Lost connection to %s." % self.transport.getPeer( ).host);
         
     def dataReceived(self, data):
-        logging.debug("Received: \n%s"%rtmputil.getBinaryStream(data))
+        logging.debug("Received: \n%s"%util.general.getBinaryStream(data))
         self.input.write(data)
         self.checkForParsableContent()
         
@@ -105,7 +77,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readWelcomeHandshake()
-                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
+                except util.bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -116,7 +88,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readReplyHandshake()
-                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
+                except util.bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -128,7 +100,7 @@ class RTMPProtocol(protocol.Protocol):
                 self.input.transactionStart()
                 try:
                     self.readAMFPacket()
-                except bufferedstringstream.BufferedStringStreamInsufficientDataException:
+                except util.bufferedstringstream.BufferedStringStreamInsufficientDataException:
                     self.input.transactionRollback()
                     return;
                 self.input.transactionCommit()
@@ -161,7 +133,7 @@ class RTMPProtocol(protocol.Protocol):
      
     def handleAMFPacket(self, amfpacket):
         if amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCALL:
-            logging.debug("Decoding call: \n%s"%rtmputil.getBinaryStream(amfpacket["data"]))
+            logging.debug("Decoding call: \n%s"%util.general.getBinaryStream(amfpacket["data"]))
             input = cStringIO.StringIO(amfpacket["data"])
             callobject = {}
             type = amf0.read_byte(input)
@@ -185,8 +157,8 @@ class RTMPProtocol(protocol.Protocol):
                 raise RTMPProtocolUnknownRemoteCallableException("Received unknown remotecallable: %s"%callobject["name"])
             remotecallable(amfpacket["header"], callobject)
         elif amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCOMMAND:
-            logging.debug("Decoding command: \n%s"%rtmputil.getBinaryStream(amfpacket["data"]))
-            input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
+            logging.debug("Decoding command: \n%s"%util.general.getBinaryStream(amfpacket["data"]))
+            input = util.general.FancyReader(util.bufferedstringstream.BufferedStringStream())
             input.write(amfpacket["data"])
             commandkind = input.readUInt16B()
             streamid = input.readUInt32B()
@@ -198,7 +170,7 @@ class RTMPProtocol(protocol.Protocol):
                 raise RTMPProtocolUnknownCommandException("Received unknown command: %d"%commandkind)
             command(streamid, input)
         elif amfpacket["header"]["kind"] == RTMPProtocol.KIND_KBYTESREADED:
-            input = rtmputil.FancyReader(bufferedstringstream.BufferedStringStream())
+            input = util.general.FancyReader(util.bufferedstringstream.BufferedStringStream())
             input.write(amfpacket["data"])
             bytesreaded = input.readUInt32B()
             logging.debug("Bytes readed: %d"%bytesreaded)
@@ -207,12 +179,12 @@ class RTMPProtocol(protocol.Protocol):
     
     def flushOutput(self):
         data = self.output.readAll()
-#        logging.debug("Sending: \n%s"%rtmputil.getBinaryStream(data))
+#        logging.debug("Sending: \n%s"%util.general.getBinaryStream(data))
         self.transport.write(data)
         self.output.reset()
     
     def sendCommand(self, commandkind, streamid):
-        stream = rtmputil.FancyWriter(bufferedstringstream.BufferedStringStream())
+        stream = util.general.FancyWriter(util.bufferedstringstream.BufferedStringStream())
         stream.writeUInt16B(commandkind);
         stream.writeUInt32B(streamid);
 
@@ -220,7 +192,7 @@ class RTMPProtocol(protocol.Protocol):
         self.send(channelid=channelid, data=stream.readAll(), kind=RTMPProtocol.KIND_KCOMMAND, streamid=0) #streamid is 0 here, is already set in the command
     
     def sendFLVChunk(self, channelid, chunk, streamid, timestamp):
-        if chunk.CHUNKTYPE == flv.FLVMetaDataChunk.CHUNKTYPE:
+        if chunk.CHUNKTYPE == util.flv.FLVMetaDataChunk.CHUNKTYPE:
             logging.debug("Metadata, not sending")
             return;
 #        logging.debug("Sending a %s, time %d, bytes %d"%(chunk.__class__.__name__, chunk.time, len(chunk.data)))
@@ -244,7 +216,7 @@ class RTMPProtocol(protocol.Protocol):
         }
         self.writeHeader(header)
         headerbyte = self.getHeaderSingleByte(header)
-        partitioneddata = chr(headerbyte).join(rtmputil.split_len(data, self.write_chunk_size))
+        partitioneddata = chr(headerbyte).join(util.general.split_len(data, self.write_chunk_size))
         self.output.write(partitioneddata)
         self.flushOutput()
         
@@ -286,8 +258,8 @@ class RTMPProtocol(protocol.Protocol):
     def readReplyHandshake(self,):
         handshake = self.input.read(RTMPProtocol.HANDSHAKELENGTH)
 #        if not self.handshake == handshake:
-#            logging.debug("handshake: \n%s"%rtmputil.getBinaryStream(self.handshake))
-#            logging.debug("handshake2: \n%s"%rtmputil.getBinaryStream(handshake))
+#            logging.debug("handshake: \n%s"%util.general.getBinaryStream(self.handshake))
+#            logging.debug("handshake2: \n%s"%util.general.getBinaryStream(handshake))
 #            raise RTMPProtocolHandshakeException("Replyhandshake does not match initial handshake")
     
     def getHeaderSize(self, firstbyte):
@@ -357,21 +329,15 @@ class RTMPProtocol(protocol.Protocol):
         logging.info("Requested file: %s"%filename)
         #for now :)
         filename = "/mnt/media/%s"%filename
+        if not os.path.isabs(filename):
+            raise Exception("Not an absolute filename: %s"%filename)
         streamid = header["src_dst"]
-        buffer = bufferedstringstream.BufferedStringStream()
-        processProtocol=ProcessProtocolBufferWriter(buffer);
-        reactor.spawnProcess(processProtocol, 'convertvideo.sh', ['convertvideo.sh', filename])
         assert self.sStream[streamid]["play"] == None
-        reader= flv.FLVReader(buffer);
         self.sStream[streamid]["channelid"]=header["channelid"]
         self.sStream[streamid]["play"]= {
-                         "reader": reader,
-                         "buffer": buffer,
-                         "processProtocol": processProtocol,
-                         "flv": None,
+                         "provider": flvstreamprovider.FlvStreamProvider.getFlvStreamProvider(filename),
                          "starttime": time.time()-5,
                          "curTime": 0,
-                         "blocked": None,
                          "paused": None,
                         };
         self.seek(streamid,0);
@@ -437,19 +403,19 @@ class RTMPProtocol(protocol.Protocol):
             if self.sStream[streamid]["play"]:
                 logging.debug("Stream %d needs playing (%.3f sec)"%(streamid, now-self.sStream[streamid]["play"]["starttime"]))
                 while True:
-                    self.sStream[streamid]["play"]["buffer"].transactionStart()
                     try:
-                        chunk = self.sStream[streamid]["play"]["reader"].readChunk()
-                    except bufferedstringstream.BufferedStringStreamInsufficientDataException:
-                        self.sStream[streamid]["play"]["buffer"].transactionRollback()
-                        if self.sStream[streamid]["play"]["processProtocol"].ended:
-                            self.sStream[streamid]["play"]=None
+                        chunk = self.sStream[streamid]["play"]["provider"].getFLVChunk()
+                    except flvstreamprovider.FileFlvStreamProviderTemporarilyNoChunkException:
                         logging.info("Breaking because not enough data available")
-                        break
-		    self.sStream[streamid]["play"]["buffer"].transactionCommit()
+                        break;
+                    except flvstreamprovider.FileFlvStreamProviderStreamEndedException:
+                        logging.info("Breaking because stream ended")
+                        break;
                         
                     self.sendFLVChunk(self.sStream[streamid]["channelid"], chunk, streamid, chunk.time)
+                    logging.info("Sent one packet")
                     if (float(chunk.time)/1000) + self.sStream[streamid]["play"]["starttime"] > now:
+                        logging.info("Breaking because we're up to date")
                         break;
                 
 

@@ -1,7 +1,9 @@
 from twisted.web import server, resource, static
 from twisted.internet import reactor, protocol, error
-import os, urllib
+import os, urllib, sys, logging
 import rtmp
+
+sys.path.append(os.path.dirname(__file__));
 
 
 class ProcessPassthroughprotocol(protocol.ProcessProtocol):
@@ -93,6 +95,8 @@ class GetFile(WiiServerExternalprogramResource):
 
     def getProcessPassthroughClass(self):
         return ProcessPassthroughprotocol
+    
+logging.basicConfig(level=logging.INFO)
 
 root = static.File("root")
 root.putChild('getdir',GetDir())

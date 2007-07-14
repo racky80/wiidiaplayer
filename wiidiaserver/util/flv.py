@@ -1,4 +1,4 @@
-import rtmputil
+import util
 
 class FLVChunk:
     def __init__(self, data, time):
@@ -24,7 +24,7 @@ class FLVReader:
                  }
     
     def __init__(self, readableobject):
-        self.input=rtmputil.FancyReader(readableobject)
+        self.input=util.general.FancyReader(readableobject)
         self.headerReaded=False
         
     def readHeader(self):
@@ -58,7 +58,7 @@ class FLVReader:
         
 class FLVWriter:
     def __init__(self, writeableobject):
-        self.output=rtmputil.FancyWriter(writeableobject)
+        self.output=util.general.FancyWriter(writeableobject)
         
     def writeHeader(self):
         self.output.write("FLV");
