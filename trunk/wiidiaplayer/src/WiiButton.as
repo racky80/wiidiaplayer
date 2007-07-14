@@ -14,6 +14,10 @@ class WiiButton extends MovieClip {
 	private var button_mc:MovieClip;
 	private var button_text:TextField;
 	
+	private var enabled_tf:TextFormat;
+	private var disabled_tf:TextFormat;
+	private var enabled:Boolean;
+	
 	public function WiiButton(text:String, width:Number, height:Number) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
@@ -25,9 +29,19 @@ class WiiButton extends MovieClip {
 		this.width = width
 		this.height = height
 		drawn = false
+		
+		enabled_tf = new TextFormat("defaultfont");
+		enabled_tf.size=Config.WIIBUTTON_ENABLED_FONTSIZE
+		enabled_tf.color=Config.WIIBUTTON_ENABLED_FONTCOLOR
+
+		disabled_tf = new TextFormat("defaultfont");
+		disabled_tf.size=Config.WIIBUTTON_DISABLED_FONTSIZE
+		disabled_tf.color=Config.WIIBUTTON_DISABLED_FONTCOLOR
+		
+		enabled=null
 	}
 	
-	public function draw(mc:MovieClip) {
+	public function draw(mc:MovieClip, enabled:Boolean) {
 		mc.createEmptyMovieClip("wiibutton_"+thiscount,mc.getNextHighestDepth());
 		button_mc = mc["wiibutton_"+thiscount];
 		
@@ -41,11 +55,8 @@ class WiiButton extends MovieClip {
 		
 		button_mc.createTextField("mytext",button_mc.getNextHighestDepth(),-width/2+Config.WIIBUTTON_PADDING,-height/2+Config.WIIBUTTON_PADDING, width-2*Config.WIIBUTTON_PADDING, height-2*Config.WIIBUTTON_PADDING)
 		button_text = button_mc["mytext"];
-		var tfmt:TextFormat = new TextFormat("defaultfont");
-		tfmt.size=Config.WIIBUTTON_FONTSIZE;
-		tfmt.color=Config.WIIBUTTON_FONTCOLOR;
-		button_text.setNewTextFormat(tfmt)
 		button_text.embedFonts=true;
+		button_text.setNewTextFormat(enabled_tf)
 		button_text.text=text;
 		var fieldWidth:Number = button_text.textWidth+2* Config.WIIBUTTON_FLASHINTERNAL_TEXTFIELD_PADDING
 		var fieldHeight:Number = button_text.textHeight+2* Config.WIIBUTTON_FLASHINTERNAL_TEXTFIELD_PADDING
@@ -64,10 +75,9 @@ class WiiButton extends MovieClip {
 		button_text._height=Math.min(button_text._height,fieldHeight)
 		
 		WiiButton.makeIntoGrowingButton(button_mc);
-		// now get the button into place
 		
 		drawn = true
-		button_mc.onPress = handler
+		this.setEnabled(enabled, true)
 	}
 	
 	public function setPosition(x:Number, y:Number) {
@@ -77,13 +87,33 @@ class WiiButton extends MovieClip {
 	
 	public function setClickHandler(handler:Function) {
 		this.handler = handler
-		if (drawn) {
+		if (drawn && enabled) {
 			button_mc.onPress = handler
 		}
 	}
 	
+	public function resetScale() {
+		button_mc.targetscaling=100;
+	}
+	
 	public function removeMovieClip() {
 		button_mc.removeMovieClip()
+	}
+	
+	public function setEnabled(value:Boolean, force:Boolean) {
+		if (this.enabled == value && !force) {
+			return;
+		}
+		this.enabled = value;
+		if (this.enabled) {
+			button_text.setTextFormat(enabled_tf);
+			WiiButton.makeIntoGrowingButton(button_mc)
+			button_mc.onPress = handler
+		} else {
+			button_text.setTextFormat(disabled_tf);
+			WiiButton.disableGrowingButton(button_mc)
+			button_mc.onPress = null
+		}
 	}
 	
 	static function makeIntoGrowingButton(mc:MovieClip) {
@@ -102,15 +132,27 @@ class WiiButton extends MovieClip {
 			}
 		}
 
+		mc.onRollOut = function() {
+			this.targetscaling = 100;
+		}
+		
+		WiiButton.enableGrowingButton(mc)
+		
+	}
+	
+	
+	static function enableGrowingButton(mc:MovieClip) {
+		var oLogger:LuminicBox.Log.Logger = new LuminicBox.Log.Logger(__CLASS__);
+		oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		mc.onRollOver = function() {
 			// put this button on the top of the pile
 			this.swapDepths(this._parent.getNextHighestDepth()-1)
 			this.targetscaling = Config.WIIBUTTON_MAXSCALE;
 		}
+	}
 
-		mc.onRollOut = function() {
-			this.targetscaling = 100;
-		}
-		
+	
+	static function disableGrowingButton(mc:MovieClip) {
+		mc.onRollOver = null
 	}
 }

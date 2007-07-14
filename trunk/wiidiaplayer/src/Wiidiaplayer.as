@@ -2,6 +2,7 @@
 	static public var __CLASS__:String = "Wiidiaplayer";
 	
 	private var root:MovieClip;
+	private var titlebar:Titlebar;
 	private var video:VideoScreen;
 	private var fileSelector:FileSelector;
 	private var oLogger:LuminicBox.Log.Logger;
@@ -20,13 +21,22 @@
 		
 		video = new VideoScreen();
 		video.draw(this.root);
-	//	video.playTest();
+
 		
-		
-		fileSelector = new FileSelector(function(file:String) {self.oLogger.info("playing "+file); self.video.play(file); self.fileSelector.close()})
+		fileSelector = new FileSelector(function(file:String) {
+			self.oLogger.info("playing "+file);
+			self.video.play(file);
+			self.fileSelector.close()
+			self.titlebar.setTitle(Util.basename(file))
+		})
 		
 		fileSelector.draw(root)
 		fileSelector.open();
+
+
+		this.titlebar = new Titlebar(function() {self.fileSelector.open()}, function() {self.video.pause()} );
+		this.titlebar.draw(this.root)
+		
 	}
 	
 	
