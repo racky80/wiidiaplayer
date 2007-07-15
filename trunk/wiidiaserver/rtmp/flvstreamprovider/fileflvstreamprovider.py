@@ -1,6 +1,6 @@
 from flvstreamproviderbase import *
 import util
-import os.path
+import os.path, logging
 
 class FileFlvStreamProvider (FlvStreamProvider):
     BUFFERFILL_CHUNCKSIZE = 102400;
@@ -28,12 +28,16 @@ class FileFlvStreamProvider (FlvStreamProvider):
             self.buffer=util.bufferedstringstream.BufferedStringStream()
             self.flvreader = util.flv.FLVReader(self.buffer)
             self.seekFile(0)
+            self.seekStatus = None
         else:
             self.seekStatus = { "timestamp": timestamp,
                                 "videosync": False,
                                 "audiosync": False,
                                 "filesync": False,
                                }
+
+    def hasVideo(self):
+        return True
     
     def seekFile(self, filepos):
         self.buffer.reset()
@@ -75,7 +79,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
             return self.getFLVChunk()
         self.buffer.transactionCommit();
         
-        if chunk.CHUNKTYPE == util.flv.FLVVideoChunk.CHUNKTYPE and chunk.isKeyFrame:
+        if (chunk.CHUNKTYPE == util.flv.FLVVideoChunk.CHUNKTYPE and chunk.isKeyFrame) or not self.hasVideo(): # if we don;t have video, every frame is a keyframe
             self.aKeyFrame.append({"timestamp":chunk.time, "filepos":pos})
         
         if seeking:
@@ -101,7 +105,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
                     if not self.seekStatus["videosync"]:
                         chunk.time=0;
                         self.seekStatus["videosync"] = True
-            if self.seekStatus["videosync"] and self.seekStatus["audiosync"]:
+            if (self.seekStatus["videosync"] or not self.hasVideo()) and self.seekStatus["audiosync"]:
                 self.seekStatus = None
         
         return chunk;

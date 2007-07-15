@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#ffmpeg -re -v 0 -y -i "$1" -b 900k -async 1 -ar 44100 -f flv -
-
 function stop_encoding {
 	secondcoderpid=$!
 	echo "Now killing children $firstcoderpid and $secondcoderpid"
