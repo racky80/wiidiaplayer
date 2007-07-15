@@ -1,11 +1,16 @@
 import cStringIO
 import logging, time, os
 from twisted.internet import reactor, protocol, task
+import util.amf
+import util.amfutil
 from amf import amf0
 import util
 import flvstreamprovider
 
 class RTMPProtocol(protocol.Protocol):
+    CLIENT_BUFFERLENGTH_SECONDS=5
+    FLV_CHUNKSEND_INTERVAL_SECONDS=.5
+    
     HANDSHAKELENGTH=0x600
     WELCOMEBYTE= 0x03
     
@@ -47,6 +52,8 @@ class RTMPProtocol(protocol.Protocol):
                         "connect": self.rpcConnect,
                         "createStream": self.rpcCreateStream,
                         "play": self.rpcPlay,
+                        "deleteStream": self.rpcDeleteStream,
+                        "pause": self.rpcPause,
                        }
         self.commands = {
                        RTMPProtocol.COMMANDKIND_CLEAR: self.cmdClear,
@@ -60,11 +67,13 @@ class RTMPProtocol(protocol.Protocol):
     def connectionMade(self):
         self.state = RTMPProtocol.STATE_WAITINGFORHANDSHAKE
         logging.info("Connected to %s." % (self.transport.getPeer( ).host));
-        playflv = task.LoopingCall(self.playFLV)
-        playflv.start(1)
+        self.playflv = task.LoopingCall(self.playFLV)
+        self.playflv.start(RTMPProtocol.FLV_CHUNKSEND_INTERVAL_SECONDS)
         
     def connectionLost(self, reason):
         logging.info("Lost connection to %s." % self.transport.getPeer( ).host);
+        self.playflv.stop();
+        del(self.sStream);
         
     def dataReceived(self, data):
         logging.debug("Received: \n%s"%util.general.getBinaryStream(data))
@@ -134,21 +143,14 @@ class RTMPProtocol(protocol.Protocol):
     def handleAMFPacket(self, amfpacket):
         if amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCALL:
             logging.debug("Decoding call: \n%s"%util.general.getBinaryStream(amfpacket["data"]))
-            input = cStringIO.StringIO(amfpacket["data"])
+            input = util.amfutil.ByteStream(amfpacket["data"])
             callobject = {}
-            type = amf0.read_byte(input)
-            callobject["name"]=amf0.read_data(input, type, None)
-            type = amf0.read_byte(input)
-            callobject["id"]=int(amf0.read_data(input, type, None))
+            amfreader = util.amf.AMF0Parser(input)
+            callobject["name"]=amfreader.readElement()
+            callobject["id"]=amfreader.readElement()
             callobject["argv"] = []
-            while True:
-                c = input.read(1)
-                if c == "":
-                    break
-                type = ord(c)
-		try:
-	                callobject["argv"].append(amf0.read_data(input, type, None))
-		except Exception: pass	#somehow flash from the IDE sends a parameter that we cannot parse
+            while input.peek() != None:
+                callobject["argv"].append(amfreader.readElement())
 			
             logging.debug("Received a KCall %s (header %s)" %(repr(callobject), repr(amfpacket["header"])))
             try:
@@ -296,6 +298,7 @@ class RTMPProtocol(protocol.Protocol):
         self.sendCall(header["channelid"], call)
     
     def rpcCreateStream(self, header, callobject):
+        logging.info("createStream: %s"%(callobject.__repr__()))
         streamid =1
         while True:
             try:
@@ -309,8 +312,6 @@ class RTMPProtocol(protocol.Protocol):
                                   "channelid": None,
                                   "play": None,
                                   "record": None,
-                                  "audio": True,
-                                  "video": True,
                                  }
         call = {
                 "name": "_result",
@@ -323,6 +324,42 @@ class RTMPProtocol(protocol.Protocol):
         self.sendCall(header["channelid"], call)
         logging.info("Created stream with id: %d"%streamid)
     
+    def rpcDeleteStream(self, header, callobject):
+        logging.info("deleteStream: %s"%(callobject.__repr__()))
+        streamid = header["src_dst"]
+        del(self.sStream[streamid])
+        
+    
+    def rpcPause(self, header, callobject):
+        logging.info("Pause: %s"%(callobject.__repr__()))
+        streamid = header["src_dst"]
+        pause = callobject["argv"][1];
+        time = callobject["argv"][2];
+        
+        if pause == None:
+            pause = not self.sStream[streamid]["play"]["paused"];
+        
+        if pause:
+            self.sStream[streamid]["play"]["paused"] = True;
+            self.sendCommand(streamid, RTMPProtocol.COMMANDKIND_PLAY)
+        else:
+            self.sStream[streamid]["play"]["paused"] = False;
+            self.seek(streamid, time)
+        
+        
+        call = {
+                "name": "_result",
+                "id": callobject["id"],
+                "argv": [
+                         None,
+                         {
+                          "level": "status",
+                          "code": {False: "NetStream.Unpause.Notify", True: "NetStream.Pause.Notify"}[self.sStream[streamid]["play"]["paused"]],
+                         }
+                        ]
+                }
+        self.sendCall(header["channelid"], call, streamid=streamid)
+    
     def rpcPlay(self, header, callobject):
         # TODO: add security for the file
         filename = callobject["argv"][1];
@@ -332,13 +369,13 @@ class RTMPProtocol(protocol.Protocol):
         if not os.path.isabs(filename):
             raise Exception("Not an absolute filename: %s"%filename)
         streamid = header["src_dst"]
-        assert self.sStream[streamid]["play"] == None
+        if self.sStream[streamid]["play"] != None: pass # the destructor will be called as soon as it's getting replaced
+            
         self.sStream[streamid]["channelid"]=header["channelid"]
         self.sStream[streamid]["play"]= {
                          "provider": flvstreamprovider.FlvStreamProvider.getFlvStreamProvider(filename),
-                         "starttime": time.time()-5,
-                         "curTime": 0,
-                         "paused": None,
+                         "starttime": None,
+                         "paused": False,
                         };
         self.seek(streamid,0);
         call = {
@@ -371,6 +408,7 @@ class RTMPProtocol(protocol.Protocol):
                 }
         self.sendCall(header["channelid"], call2, streamid=streamid)
         self.playFLV()
+
     
     def cmdClear(self, streamid, inputstream):
         logging.info("Received command clear (streamid: %d)"%streamid)
@@ -391,6 +429,8 @@ class RTMPProtocol(protocol.Protocol):
         self.sendCommand(RTMPProtocol.COMMANDKIND_PLAY, streamid)
         self.sendCommand(RTMPProtocol.COMMANDKIND_RESET, streamid)
         self.sendCommand(RTMPProtocol.COMMANDKIND_CLEAR, streamid)
+        self.sStream[streamid]["play"]["starttime"] = time.time()*1000-timestamp - RTMPProtocol.CLIENT_BUFFERLENGTH_SECONDS*1000
+        self.sStream[streamid]["play"]["provider"].seek(timestamp)
         self.playFLV()
 #        for _ in range(3):
 #            chunk = self.sStream[streamid]["play"]["reader"].readChunk()
@@ -398,24 +438,36 @@ class RTMPProtocol(protocol.Protocol):
             
     
     def playFLV(self):
-        now = time.time()
+        now = time.time()*1000
+        chunks_sent=0;
         for streamid in self.sStream:
-            if self.sStream[streamid]["play"]:
-                logging.debug("Stream %d needs playing (%.3f sec)"%(streamid, now-self.sStream[streamid]["play"]["starttime"]))
+            if self.sStream[streamid]["play"] and not self.sStream[streamid]["play"]["paused"]:
+                logging.debug("Stream %d needs playing (%.3f sec)"%(streamid, (now-self.sStream[streamid]["play"]["starttime"])/1000))
+                firsttimestamp = 0;
                 while True:
                     try:
                         chunk = self.sStream[streamid]["play"]["provider"].getFLVChunk()
                     except flvstreamprovider.FileFlvStreamProviderTemporarilyNoChunkException:
-                        logging.info("Breaking because not enough data available")
+                        logging.info("Breaking because not enough data available (sent %d chunks)"%chunks_sent)
                         break;
                     except flvstreamprovider.FileFlvStreamProviderStreamEndedException:
-                        logging.info("Breaking because stream ended")
+                        logging.info("Breaking and stopping playback because stream ended (sent %d chunks)"%chunks_sent)
+#                        self.sStream[streamid]["play"] = None   # can't do this becuase maybe we want to pause / seek
                         break;
-                        
+                    if chunk == None:
+                        # the chunk available is not for sending
+                        continue
+                    
                     self.sendFLVChunk(self.sStream[streamid]["channelid"], chunk, streamid, chunk.time)
-                    logging.info("Sent one packet")
-                    if (float(chunk.time)/1000) + self.sStream[streamid]["play"]["starttime"] > now:
-                        logging.info("Breaking because we're up to date")
+                    chunks_sent +=1
+                    if firsttimestamp == 0: #note - after seeking timestamps of 0 are sent, so we ignore them
+                        firsttimestamp = chunk.time
+                    
+                    if chunk.time > firsttimestamp + RTMPProtocol.FLV_CHUNKSEND_INTERVAL_SECONDS*1500:
+                        logging.info("Breaking because we've sent 1.5 times the send interval (sent %d chunks)"%chunks_sent)
+                        break;
+                    if chunk.time + self.sStream[streamid]["play"]["starttime"] > now:
+                        logging.info("Breaking because we're up to date (sent %d chunks)"%chunks_sent)
                         break;
                 
 
