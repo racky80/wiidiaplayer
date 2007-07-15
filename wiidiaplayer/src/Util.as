@@ -42,4 +42,25 @@ class Util {
 		return asDir;
 	}
 	
+	static public function formatAsTime(timeseconds:Number):String {
+		var hours:Number = Math.floor(timeseconds/3600)
+		var minutes:Number = Math.floor(timeseconds/60)%60
+		var seconds:Number = Math.floor(timeseconds)%60
+		var s:String = ""
+		if (hours) {
+			s+= hours+":"
+		}
+		return s+Util.formatAsTwoDigits(minutes)+":"+Util.formatAsTwoDigits(seconds)
+	}
+
+	static public function formatAsTwoDigits(n:Number):String {
+		if (n < 10) {
+			return "0"+Math.floor(n)
+		}
+		return ""+Math.floor(n%100)
+	}
+	
+	
+	
+	
 }

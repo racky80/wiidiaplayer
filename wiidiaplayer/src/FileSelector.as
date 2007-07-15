@@ -6,6 +6,7 @@ class FileSelector {
 	private var fileselector_mc:MovieClip
 	private var title_text:TextField
 	private var up_btn:WiiButton
+	private var close_btn:WiiButton
 	private var next_btn:WiiButton
 	private var previous_btn:WiiButton
 	private var pagenr:Number
@@ -53,17 +54,21 @@ class FileSelector {
 		title_text.autoSize = "left"
 		
 		
+		close_btn = new WiiButton("x", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
+		close_btn.draw(fileselector_mc, true)
+		close_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING-Config.FILESELECTOR_NAVBUTTON_WIDTH*.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
+		close_btn.setClickHandler(function () {self.callback(""); self.close_btn.resetScale()})
 		next_btn = new WiiButton(">>", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
 		next_btn.draw(fileselector_mc, false)
-		next_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING-Config.FILESELECTOR_NAVBUTTON_WIDTH*.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
+		next_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*2-Config.FILESELECTOR_NAVBUTTON_WIDTH*1.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		next_btn.setClickHandler(function() {self.pagenr++; self.drawButtons()})
 		previous_btn = new WiiButton("<<", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
 		previous_btn.draw(fileselector_mc, false)
-		previous_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*2-Config.FILESELECTOR_NAVBUTTON_WIDTH*1.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
+		previous_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*3-Config.FILESELECTOR_NAVBUTTON_WIDTH*2.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		previous_btn.setClickHandler(function() {self.pagenr--; self.drawButtons()})
 		up_btn = new WiiButton("^^", Config.FILESELECTOR_NAVBUTTON_WIDTH, Config.FILESELECTOR_NAVBUTTON_HEIGHT)
 		up_btn.draw(fileselector_mc, false)
-		up_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*3-Config.FILESELECTOR_NAVBUTTON_WIDTH*2.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
+		up_btn.setPosition(Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*4-Config.FILESELECTOR_NAVBUTTON_WIDTH*3.5, Config.FILESELECTOR_NAVBUTTON_HEIGHT/2+Config.FILESELECTOR_PADDING)
 		up_btn.setClickHandler(function() {self.retrieveAndShowDirContents(Util.dirname(self.currentpath))})
 		
 		
@@ -139,7 +144,7 @@ class FileSelector {
 		for (var i:Number=start;i<end;i++) {
 			filebuttons[i].draw(fileselector_mc, true)
 			visiblebuttons.push(filebuttons[i])
-			var pos:Object = this.getPositionForNextButton(i-start)
+			var pos:Object = this.getPositionForButton(i-start)
 			filebuttons[i].setPosition(pos.x, pos.y)
 		}
 		
@@ -150,10 +155,10 @@ class FileSelector {
 	
 	
 	
-	private function getPositionForNextButton(btnnr:Number):Object {
+	private function getPositionForButton(btnnr:Number):Object {
 		var vertpos:Number = btnnr%Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY
 		var horizonpos:Number = Math.floor(btnnr/Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY)
-		var x:Number = Config.FILESELECTOR_PADDING*horizonpos+Config.FILESELECTOR_FILEBUTTON_WIDTH*(horizonpos+.5)
+		var x:Number = Config.FILESELECTOR_PADDING*(horizonpos+1)+Config.FILESELECTOR_FILEBUTTON_WIDTH*(horizonpos+.5)
 		var y:Number = Config.FILESELECTOR_HEADER_HEIGHT+Config.FILESELECTOR_PADDING*vertpos+Config.FILESELECTOR_FILEBUTTON_HEIGHT*(vertpos+.5)
 		return {x:x, y:y}
 	}

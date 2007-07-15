@@ -39,4 +39,13 @@
 		this.oLogger.info("pause")
 		ns.pause();
 	}
+	
+	public function seek(timediff:Number) {
+		this.oLogger.info("seek "+timediff)
+		ns.seek(ns.time+timediff);
+	}
+	
+	public function getTime():Number {
+		return ns.time;
+	}
 }
