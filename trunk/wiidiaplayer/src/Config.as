@@ -7,6 +7,8 @@ class Config {
 	static var GETDIR_SERVER_URL:String = "http://"+_root.SERVER+"/getdir/";
 	static var RTMP_SERVER_URL:String = "rtmp://"+_root.SERVER;
 	static var RTMP_TESTFLV:String = "simps-0000";
+	
+	static var APPLICATION_DRAGGING_SCREENWIDTH_TIME_SECONDS:Number=600
 
 	static var TITLEBAR_FONTSIZE:Number=30;
 	static var TITLEBAR_FONTCOLOR:Number=0xdfdfff;
@@ -15,6 +17,15 @@ class Config {
 	static var TITLEBAR_MAX_ALPHA:Number=80;
 	static var TITLEBAR_APPEAR_SPEED:Number=10;
 	static var TITLEBAR_DISAPPEAR_SPEED:Number=5;
+
+	static var TITLEBAR_TOP_X:Number=0
+	static var TITLEBAR_TOP_Y:Number=0
+	static var TITLEBAR_TOP_WIDTH:Number=Stage.width
+	static var TITLEBAR_TOP_HEIGHT:Number=Config.TITLEBAR_PADDING*2+Config.TITLEBAR_FONTSIZE;
+	static var TITLEBAR_BOTTOM_X:Number=0;
+	static var TITLEBAR_BOTTOM_HEIGHT:Number=Config.TITLEBAR_PADDING*2+Config.TITLEBAR_FONTSIZE;
+	static var TITLEBAR_BOTTOM_WIDTH:Number=Stage.width;
+	static var TITLEBAR_BOTTOM_Y:Number = Stage.height-Config.TITLEBAR_BOTTOM_HEIGHT;
 	
 	static var TITLEBAR_FILESELECTOR_BUTTON_WIDTH:Number=50;
 	static var TITLEBAR_FILESELECTOR_BUTTON_HEIGHT:Number=30;
@@ -25,6 +36,12 @@ class Config {
 	static var TITLEBAR_PAUSE_BUTTON_HEIGHT:Number=30;
 	static var TITLEBAR_PAUSE_X:Number=Stage.width-Config.TITLEBAR_FILESELECTOR_BUTTON_WIDTH*1.5-2*Config.TITLEBAR_PADDING;
 	static var TITLEBAR_PAUSE_Y:Number=Config.TITLEBAR_PADDING+Config.TITLEBAR_FILESELECTOR_BUTTON_HEIGHT*.5;
+	
+	static var TITLEBAR_TITLE_X:Number=Config.TITLEBAR_PADDING;
+	static var TITLEBAR_TITLE_Y:Number=0;
+	
+	static var TITLEBAR_TIME_X:Number=Config.TITLEBAR_PADDING;
+	static var TITLEBAR_TIME_Y:Number=Stage.height - Config.TITLEBAR_PADDING - TITLEBAR_FONTSIZE;
 	
 	
 	static var WIIBUTTON_MAXSCALE:Number=170;
@@ -37,10 +54,11 @@ class Config {
 	static var WIIBUTTON_PADDING:Number=3;
 	static var WIIBUTTON_FLASHINTERNAL_TEXTFIELD_PADDING:Number=Config.WIIBUTTON_ENABLED_FONTSIZE*.15;
 	
-	static var FILESELECTOR_X:Number = 50
-	static var FILESELECTOR_Y:Number = 50
-	static var FILESELECTOR_WIDTH:Number = Stage.width-2*Config.FILESELECTOR_X
-	static var FILESELECTOR_HEIGHT:Number = Stage.height-Config.FILESELECTOR_Y
+	static var FILESELECTOR_EXTERNALPADDING:Number = 10
+	static var FILESELECTOR_X:Number = Config.FILESELECTOR_EXTERNALPADDING
+	static var FILESELECTOR_Y:Number = Config.FILESELECTOR_EXTERNALPADDING
+	static var FILESELECTOR_WIDTH:Number = Stage.width-2*Config.FILESELECTOR_EXTERNALPADDING
+	static var FILESELECTOR_HEIGHT:Number = Stage.height-2*Config.FILESELECTOR_EXTERNALPADDING
 	
 	static var FILESELECTOR_PADDING:Number = 5
 
@@ -50,10 +68,12 @@ class Config {
 	static var FILESELECTOR_NAVBUTTON_WIDTH:Number = 45
 	static var FILESELECTOR_NAVBUTTON_HEIGHT:Number = 30
 	
-	static var FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY:Number = 3
-	static var FILESELECTOR_FILEBUTTON_NR_VERTICALLY:Number = 10
+	static var FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY:Number = 2
+	static var FILESELECTOR_FILEBUTTON_NR_VERTICALLY:Number = 11
 	static var FILESELECTOR_FILEBUTTON_WIDTH:Number = (Config.FILESELECTOR_WIDTH-Config.FILESELECTOR_PADDING*(Config.FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY+1))/Config.FILESELECTOR_FILEBUTTON_NR_HORIZONTALLY
 	static var FILESELECTOR_FILEBUTTON_HEIGHT:Number = 30
 	
 	static var FILESELECTOR_HEADER_HEIGHT:Number = Config.FILESELECTOR_HEIGHT - (Config.FILESELECTOR_FILEBUTTON_HEIGHT*Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY+(Config.FILESELECTOR_PADDING*(Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY+1)))
+	
+	static var DRAGGER_SENSIBILITY:Number=10; // regard any movement smaller that sqrt(this number) during mousedown not as dragging
 }
