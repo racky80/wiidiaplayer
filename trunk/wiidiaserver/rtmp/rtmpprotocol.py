@@ -54,6 +54,7 @@ class RTMPProtocol(protocol.Protocol):
                         "play": self.rpcPlay,
                         "deleteStream": self.rpcDeleteStream,
                         "pause": self.rpcPause,
+                        "seek": self.rpcSeek,
                        }
         self.commands = {
                        RTMPProtocol.COMMANDKIND_CLEAR: self.cmdClear,
@@ -361,10 +362,9 @@ class RTMPProtocol(protocol.Protocol):
         self.sendCall(header["channelid"], call, streamid=streamid)
     
     def rpcPlay(self, header, callobject):
-        # TODO: add security for the file
+        logging.info("Play: %s"%(callobject.__repr__()))
         filename = callobject["argv"][1];
         logging.info("Requested file: %s"%filename)
-        #for now :)
         filename = "/mnt/media/%s"%filename
         if not os.path.isabs(filename):
             raise Exception("Not an absolute filename: %s"%filename)
@@ -408,6 +408,37 @@ class RTMPProtocol(protocol.Protocol):
                 }
         self.sendCall(header["channelid"], call2, streamid=streamid)
         self.playFLV()
+    
+    def rpcSeek(self, header, callobject):
+        logging.info("Seek: %s"%(callobject.__repr__()))
+        streamid = header["src_dst"]
+        time = callobject["argv"][1];
+        self.seek(streamid, time)
+        call = {
+                "name": "_result",
+                "id": callobject["id"],
+                "argv": [
+                         None,
+                         {
+                          "level": "status",
+                          "code": "NetStream.Seek.Notify",
+                         }
+                        ]
+                }
+        self.sendCall(header["channelid"], call, streamid=streamid)
+        call2 = {
+                "name": "onStatus",
+                "id": callobject["id"],
+                "argv": [
+                         None,
+                         {
+                          "level": "status",
+                          "code": "NetStream.Play.Start",
+                         }
+                        ]
+                }
+        self.sendCall(header["channelid"], call2, streamid=streamid)
+
 
     
     def cmdClear(self, streamid, inputstream):

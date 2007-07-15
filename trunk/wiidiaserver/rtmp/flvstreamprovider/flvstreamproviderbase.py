@@ -10,7 +10,7 @@ class FlvStreamProvider:
         import convertablevideoflvstreamprovider, fileflvstreamprovider
         
         cls.PREFERREDPROVIDERS=[
-                            #fileflvstreamprovider.FileFlvStreamProvider,
+                            fileflvstreamprovider.FileFlvStreamProvider,
                             convertablevideoflvstreamprovider.ConvertableVideoFlvStreamProvider
                             ]
         """retrieves a streamprovider object that will play this file or directory"""

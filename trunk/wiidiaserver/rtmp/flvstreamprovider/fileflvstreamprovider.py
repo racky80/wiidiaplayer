@@ -1,5 +1,6 @@
 from flvstreamproviderbase import *
 import util
+import os.path
 
 class FileFlvStreamProvider (FlvStreamProvider):
     BUFFERFILL_CHUNCKSIZE = 102400;
@@ -13,7 +14,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
     @classmethod
     def supportsresource(cls, resourcename):
         '''returns whether a provider can provide the given resource'''
-        return True
+        return resourcename.split(".")[-1] == "flv";
 
     def getFileName(self):
         return self.resourcename
