@@ -412,7 +412,7 @@ class RTMPProtocol(protocol.Protocol):
     def rpcSeek(self, header, callobject):
         logging.info("Seek: %s"%(callobject.__repr__()))
         streamid = header["src_dst"]
-        time = callobject["argv"][1];
+        time = max(callobject["argv"][1],0);
         self.seek(streamid, time)
         call = {
                 "name": "_result",
@@ -457,6 +457,14 @@ class RTMPProtocol(protocol.Protocol):
         logging.info("Received command ping (streamid: %d), param %d"%(streamid, inputstream.readUInt32B()))
     
     def seek(self, streamid, timestamp):
+        try:
+            if not self.sStream[streamid]["play"]:
+                logging.info("Stream not playing, ignoring seek")
+                return
+        except KeyError:
+            logging.info("Cannot find stream, ignoring seek")
+            return
+        
         self.sendCommand(RTMPProtocol.COMMANDKIND_PLAY, streamid)
         self.sendCommand(RTMPProtocol.COMMANDKIND_RESET, streamid)
         self.sendCommand(RTMPProtocol.COMMANDKIND_CLEAR, streamid)
