@@ -80,7 +80,8 @@ class FileFlvStreamProvider (FlvStreamProvider):
         self.buffer.transactionCommit();
         
         if (chunk.CHUNKTYPE == util.flv.FLVVideoChunk.CHUNKTYPE and chunk.isKeyFrame) or not self.hasVideo(): # if we don;t have video, every frame is a keyframe
-            self.aKeyFrame.append({"timestamp":chunk.time, "filepos":pos})
+            if chunk.time > self.aKeyFrame[-1]["timestamp"]: #we might be replaying a part we checkout out before, make sure that the timestamps stay in order
+                self.aKeyFrame.append({"timestamp":chunk.time, "filepos":pos})
         
         if seeking:
             if self.seekStatus["timestamp"] < chunk.time:

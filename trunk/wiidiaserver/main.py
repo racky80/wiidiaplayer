@@ -97,8 +97,15 @@ class GetFile(WiiServerExternalprogramResource):
         return ProcessPassthroughprotocol
     
 logging.basicConfig(level=logging.INFO)
+try:
+    rootdir = sys.argv[1]
+except IndexError:
+    rootdir = "root"
 
-root = static.File("root")
+logging.info("Using %s as rootdir" %rootdir);
+
+
+root = static.File(rootdir)
 root.putChild('getdir',GetDir())
 root.putChild('getfile',GetFile())
 root.putChild('getinfo',GetInfo())

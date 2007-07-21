@@ -491,6 +491,19 @@ class RTMPProtocol(protocol.Protocol):
                         break;
                     except flvstreamprovider.FileFlvStreamProviderStreamEndedException:
                         logging.info("Breaking and stopping playback because stream ended (sent %d chunks)"%chunks_sent)
+                        call = {
+                                "name": "onStatus",
+                                "id": callobject["id"],
+                                "argv": [
+                                         None,
+                                         {
+                                          "level": "status",
+                                          "code": "NetStream.Buffer.Flush",
+                                         }
+                                        ]
+                                }
+                        self.sendCall(header["channelid"], call, streamid=streamid)
+                        
 #                        self.sStream[streamid]["play"] = None   # can't do this becuase maybe we want to pause / seek
                         break;
                     if chunk == None:
