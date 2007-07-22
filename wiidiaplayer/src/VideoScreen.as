@@ -7,21 +7,32 @@
 	private var video:Video;
 	private var nc:NetConnection;
 	private var ns:NetStream;
+	private var flushingBuffer:Boolean;
+	private var streamendcallback:Function
+	private var seekoffset:Number
+	private var paused:Boolean
+	private var stopped:Boolean
+	private var serversiderenderpos:Number
+	private var serversiderenderpct:Number
 
-	public function VideoScreen() {
+	public function VideoScreen(streamendcallback:Function) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		this.oLogger.info("__init__ "+__CLASS__);
+		this.streamendcallback = streamendcallback
+		stopped=true
 	}
 	
 	public function draw(mc:MovieClip) {
+		var self:VideoScreen = this
 		mc.attachMovie("VideoDisplay", "VideoDisplay", mc.getNextHighestDepth());
 		this.videoDisplay = mc["VideoDisplay"]
 		this.video = this.videoDisplay["vid"]
 		this.nc = new NetConnection();
 		this.nc.connect(Config.RTMP_SERVER_URL);
 		ns = new NetStream(nc);
+		ns.onStatus = function(infoObject:Object) {self.onStatus(infoObject)}
 		this.video.attachVideo(this.ns);
 		this.oLogger.info(mc)
 	}
@@ -35,17 +46,74 @@
 		this.ns.play(file);
 	}
 	
-	public function pause() {
+	public function pause(pausemode:Boolean) {
+		if (pausemode) {
+			paused=pausemode
+		} else {
+			paused=!paused
+		}
 		this.oLogger.info("pause")
-		ns.pause();
+		ns.pause(paused);
+	}
+	
+	public function seekprogress(timediff:Number) {
+		seekoffset = timediff
 	}
 	
 	public function seek(timediff:Number) {
 		this.oLogger.info("seek "+timediff)
+		seekoffset = timediff
 		ns.seek(ns.time+timediff);
 	}
 	
-	public function getTime():Number {
-		return ns.time;
+	public function getStatus():Object {
+		var result:Object = {}
+		if (seekoffset !== undefined) {
+			result["status"] = Wiidiaplayer.TIME_STATUS_SEEK
+			result["seekoffset"] = seekoffset
+			result["serversiderenderpos"] = serversiderenderpos
+			result["serversiderenderpct"] = serversiderenderpct
+		} else if (stopped) {
+			result["status"] = Wiidiaplayer.TIME_STATUS_STOP
+		} else if (paused) {
+			result["status"] = Wiidiaplayer.TIME_STATUS_PAUSE
+		} else {
+			result["status"] = Wiidiaplayer.TIME_STATUS_PLAY
+		}
+		result["timeseconds"] = ns.time
+		return result;
+	}
+	
+	public function getCurrentFPS():Number {
+		return ns.currentFps;
+	}
+	
+	public function onStatus(infoObject:Object) {
+		switch (infoObject["code"]) {
+			case "NetStream.Play.Start":
+				flushingBuffer = false
+				seekoffset = undefined
+				paused = false
+				stopped = false
+				serversiderenderpos = undefined
+				serversiderenderpct = undefined
+			break;
+			case "NetStream.Buffer.Flush":
+				flushingBuffer = true
+			break;
+			case "NetStream.Buffer.Empty":
+				if (flushingBuffer) {
+					stopped = true
+					this.streamendcallback()
+				}
+			break;
+			case "Server.Rendering.Busy":
+				serversiderenderpos = infoObject["currenttime"]
+				serversiderenderpct = (infoObject["currenttime"]-infoObject["starttime"])/(infoObject["targettime"]-infoObject["starttime"])
+			break;
+			default:
+				oLogger.info("onStatus received:")
+				oLogger.info(infoObject)
+		}
 	}
 }

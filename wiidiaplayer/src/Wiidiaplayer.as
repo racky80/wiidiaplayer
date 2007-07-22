@@ -1,5 +1,7 @@
 ﻿class Wiidiaplayer {
+	
 	static public var __CLASS__:String = "Wiidiaplayer";
+	
 	private var oLogger:LuminicBox.Log.Logger;
 	
 	private var root:MovieClip;
@@ -7,7 +9,13 @@
 	private var video:VideoScreen;
 	private var fileSelector:FileSelector;
 	private var dragger:Dragger;
+	private var playlist:Playlist;
 	
+	
+	static public var TIME_STATUS_STOP:Number=1;
+	static public var TIME_STATUS_PAUSE:Number=2;
+	static public var TIME_STATUS_PLAY:Number=3;
+	static public var TIME_STATUS_SEEK:Number=4;
 	
 	function Wiidiaplayer(rootclip:MovieClip) {
 		var self:Wiidiaplayer = this
@@ -20,42 +28,48 @@
 
 		this.root=rootclip;
 		
-		video = new VideoScreen();
+		video = new VideoScreen(function() {self.playlist.selectNext()} );
 		video.draw(this.root);
 
 		
-		fileSelector = new FileSelector(function(file:String) {
-			self.titlebar.forceHideMe(false);
-			self.fileSelector.close()
-			if (file == "") {
-				return;
-			}
-			self.oLogger.info("playing "+file);
-			self.video.play(file);
-			self.titlebar.setTitle(Util.basename(file))
-		})
-		
-		fileSelector.draw(root)
-		fileSelector.open();
-
-
-		this.titlebar = new Titlebar(function() {self.fileSelector.open(); self.titlebar.forceHideMe(true);}, function() {self.video.pause()} , function():Number {return self.getPlaybackTime()});
+		this.titlebar = new Titlebar(	function() {self.fileSelector.open(); self.titlebar.forceHideMe(true);},
+										function() {self.video.pause()} ,
+										function():Object {return self.getPlaybackStatus()},
+										function():Number {return self.getCurrentFPS()}
+										);
 		this.titlebar.draw(this.root)
-		titlebar.forceHideMe(true);
+		
+		this.playlist = new Playlist(function(playlistentry:PlaylistEntry) {
+					var file:String = playlistentry.getFilename();
+					self.oLogger.info("playing "+file);
+					self.video.play(file);
+					self.titlebar.setTitle(Util.basename(file))
+				}
+		)
+		this.playlist.draw(this.root);
+		
+		openFileSelector();
 		
 		this.dragger = new Dragger( function() {self.draggingStart()},
-									function(dx:Number, dy:Number) {self.draggingEnded(dx, dy)}
+									function(dx:Number, dy:Number) {self.draggingEnded(dx, dy)},
+									function(dx:Number, dy:Number) {self.draggingProgress(dx, dy)}
 								);
 	}
 	
 	function draggingStart() {
 		oLogger.info("dragging started")
 		this.titlebar.forceShowMe(true);
+		video.pause(true)
+	}
+	
+	function draggingProgress(dx:Number, dy:Number) {
+		video.seekprogress(getSeekFromDrag(dx))
 	}
 	
 	function draggingEnded(dx:Number, dy:Number) {
 		this.titlebar.forceShowMe(false);
 		oLogger.info("dragging ended: "+dx+", "+dy )
+		video.pause(false)
 		video.seek(getSeekFromDrag(dx))
 	}
 	
@@ -66,13 +80,45 @@
 	/**
 	* Returns the time in seconds to be displayed on the status line
 	**/
-	function getPlaybackTime():Number {
-		var dragx:Number = dragger.getDragDistance()["x"]
-		return Math.max(video.getTime() + getSeekFromDrag(dragx),0);
+	function getPlaybackStatus():Object {
+		return video.getStatus();
+	}
+	
+	function getCurrentFPS():Number {
+		return video.getCurrentFPS();
 	}
 	
 	
 	static function main(mc:MovieClip) {
 		_root.app = new Wiidiaplayer(mc); // need to assign this variable somewhere, since else the flash 7 GC thinks the objects is out of scope and destroys it right away
+	}
+	
+	
+	function openFileSelector(opennew:Boolean) {
+		var self:Wiidiaplayer = this
+		if (!fileSelector || opennew) {
+			fileSelector = new FileSelector(function(file:String) {
+				self.closeFileSelector()
+				if (file == "") {
+					return;
+				}
+				var a:/*PlaylistEntry*/Array = [new PlaylistEntry(file)];
+				var nr:Number = self.playlist.addEntries(a)
+				self.playlist.selectEntry(nr);
+			})
+			
+			fileSelector.draw(root)
+		}
+		fileSelector.open();
+		titlebar.forceHideMe(true);
+	}
+	
+	function closeFileSelector(destroy:Boolean) {
+		titlebar.forceHideMe(false);
+		fileSelector.close()
+		
+		if (destroy) {
+			fileSelector = undefined
+		}
 	}
 }

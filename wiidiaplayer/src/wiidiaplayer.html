@@ -7,8 +7,7 @@
 </head>
 <body bgcolor="#000000" style="padding: 0px; margin: 0px;">
 <script>
-	objectstr = '<embed src="../bin/wiidiaplayer.swf" type="application/x-shockwave-flash" flashvars="SERVER=10.1.0.20" pluginspage="http://www.macromedia.com/go/getflashplayer" height="450" width="800">'
-	
+	objectstr = '<embed src="../bin/wiidiaplayer.swf" type="application/x-shockwave-flash" flashvars="SERVER='+escape(location.hostname)+'" pluginspage="http://www.macromedia.com/go/getflashplayer" height="450" width="800">'
 	window.setTimeout(function () {myframe.document.open(); myframe.document.write(objectstr); myframe.document.close()}, 2000);
 </script>
 <iframe width=850 height=500 name="myframe">

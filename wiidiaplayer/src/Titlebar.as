@@ -4,19 +4,22 @@ class Titlebar {
 	
 	private var titleField:TextField;
 	private var timeField:TextField;
+	private var fpsField:TextField;
+
 	private var titlebar_mc:MovieClip;
 	private var visibilityTimer:Number;
 	private var targetalpha:Number;
 	private var openfileselector:Function;
 	private var pausefunction:Function;
 	private var timeproviderfunction:Function;
+	private var fpsproviderfunction:Function;
 	private var fileselector_btn:WiiButton;
 	private var pause_btn:WiiButton;
 	private var forceshow:Boolean = false
 	private var forcehide:Boolean = false
 	
 
-	public function Titlebar(openfileselector:Function, pausefunction:Function, timeproviderfunction:Function) {
+	public function Titlebar(openfileselector:Function, pausefunction:Function, timeproviderfunction:Function, fpsproviderfunction:Function) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
@@ -25,6 +28,7 @@ class Titlebar {
 		this.openfileselector=openfileselector
 		this.pausefunction=pausefunction
 		this.timeproviderfunction = timeproviderfunction
+		this.fpsproviderfunction = fpsproviderfunction
 	}
 	
 	public function draw(mc:MovieClip) {
@@ -38,14 +42,7 @@ class Titlebar {
 		titlebar_mc.lineTo(Config.TITLEBAR_TOP_X, Config.TITLEBAR_TOP_Y+Config.TITLEBAR_TOP_HEIGHT);
 		titlebar_mc.endFill()
 		
-		titlebar_mc.beginGradientFill("linear", [0x7f7f7f, 0x7f7f7f],[0,100],[0,0xff], {matrixType:"box", x: Config.TITLEBAR_BOTTOM_X, y:Config.TITLEBAR_BOTTOM_Y , w:Config.TITLEBAR_BOTTOM_WIDTH, h:Config.TITLEBAR_BOTTOM_HEIGHT, r:.5*Math.PI});
-		titlebar_mc.moveTo(Config.TITLEBAR_BOTTOM_X,Config.TITLEBAR_BOTTOM_Y);
-		titlebar_mc.lineTo(Config.TITLEBAR_BOTTOM_X+Config.TITLEBAR_BOTTOM_WIDTH,Config.TITLEBAR_BOTTOM_Y);
-		titlebar_mc.lineTo(Config.TITLEBAR_BOTTOM_X+Config.TITLEBAR_BOTTOM_WIDTH,Config.TITLEBAR_BOTTOM_Y+Config.TITLEBAR_BOTTOM_HEIGHT);
-		titlebar_mc.lineTo(Config.TITLEBAR_BOTTOM_X, Config.TITLEBAR_BOTTOM_Y+Config.TITLEBAR_BOTTOM_HEIGHT);
-		titlebar_mc.endFill()
-		
-		titlebar_mc.createTextField("mytext",titlebar_mc.getNextHighestDepth(),Config.TITLEBAR_TITLE_X,Config.TITLEBAR_TITLE_Y, Stage.width, Config.TITLEBAR_FONTSIZE)
+		titlebar_mc.createTextField("mytext",titlebar_mc.getNextHighestDepth(),Config.TITLEBAR_TITLE_X,Config.TITLEBAR_TITLE_Y, Config.TITLEBAR_TITLE_WIDTH, Config.TITLEBAR_TITLE_HEIGHT)
 		this.titleField = titlebar_mc["mytext"];
 		var tfmt:TextFormat = new TextFormat("defaultfont");
 		tfmt.size=Config.TITLEBAR_FONTSIZE;
@@ -54,11 +51,15 @@ class Titlebar {
 		this.titleField.embedFonts=true;
 		this.titleField.text="no title...";
 
-		titlebar_mc.createTextField("mytime",titlebar_mc.getNextHighestDepth(),Config.TITLEBAR_TIME_X,Config.TITLEBAR_TIME_Y, Stage.width, Config.TITLEBAR_FONTSIZE)
+		titlebar_mc.createTextField("mytime",titlebar_mc.getNextHighestDepth(),Config.TITLEBAR_TIME_X,Config.TITLEBAR_TIME_Y, Config.TITLEBAR_TIME_WIDTH, Config.TITLEBAR_TIME_HEIGHT)
 		this.timeField = titlebar_mc["mytime"];
 		this.timeField.setNewTextFormat(tfmt)
 		this.timeField.embedFonts=true;
 
+		titlebar_mc.createTextField("myfps",titlebar_mc.getNextHighestDepth(),Config.TITLEBAR_FPS_X,Config.TITLEBAR_FPS_Y, Config.TITLEBAR_FPS_WIDTH, Config.TITLEBAR_FPS_HEIGHT)
+		this.fpsField = titlebar_mc["myfps"];
+		this.fpsField.setNewTextFormat(tfmt)
+		this.fpsField.embedFonts=true;
 
 		titlebar_mc._alpha = 0;
 		
@@ -84,7 +85,9 @@ class Titlebar {
 		titlebar_mc._alpha += diff;
 		if (titlebar_mc._alpha > 0) {
 			titlebar_mc._visible = true;
-			setTime(timeproviderfunction())
+			var oTime:Object = timeproviderfunction();
+			setTime(oTime["status"], oTime["timeseconds"], oTime["seekoffset"], oTime["serversiderenderpos"], oTime["serversiderenderpct"])
+			setFPS(fpsproviderfunction())
 		} else {
 			titlebar_mc._visible = false;
 		}
@@ -143,7 +146,31 @@ class Titlebar {
 		this.showMe();
 	}
 	
-	public function setTime(timeseconds:Number) {
-		this.timeField.text = Util.formatAsTime(timeseconds)
+	public function setTime(status:Number, timeseconds:Number, seekoffset:Number, serversiderenderpos:Number, serversiderenderpct:Number) {
+		switch (status) {
+			case Wiidiaplayer.TIME_STATUS_STOP:
+				this.timeField.text = "--:--"
+			break;
+			case Wiidiaplayer.TIME_STATUS_PAUSE:
+				if ((new Date()).getMilliseconds() < 500) {
+					this.timeField.text = ""
+				} else {
+					this.timeField.text = Util.formatAsTime(timeseconds)
+				}
+			break;
+			case Wiidiaplayer.TIME_STATUS_PLAY:
+				this.timeField.text = Util.formatAsTime(timeseconds)
+			break;
+			case Wiidiaplayer.TIME_STATUS_SEEK:
+				showMe();
+				this.timeField.text = Util.formatAsTime(timeseconds)+" "+(seekoffset>0?"+":"-")+Util.formatAsTime(Math.abs(seekoffset))
+				if (serversiderenderpct !== undefined)
+				this.timeField.text += "("+(Math.round(serversiderenderpct*1000)/10)+"%)"
+			break;
+		}
+	}
+	
+	public function setFPS(fps:Number) {
+		this.fpsField.text = "fps: "+Math.round(fps*10)/10;
 	}
 }
