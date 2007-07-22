@@ -421,7 +421,8 @@ class RTMPProtocol(protocol.Protocol):
                         ]
                 }
         self.sendCall(header["channelid"], call, streamid=streamid)
-        self.sStream[streamid]["play"]["playstartsent"]=False
+        if self.sStream[streamid]["play"]:
+            self.sStream[streamid]["play"]["playstartsent"]=False
 
     
     def cmdClear(self, streamid, inputstream):
