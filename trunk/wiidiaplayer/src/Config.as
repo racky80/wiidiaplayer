@@ -21,11 +21,7 @@ class Config {
 	static var TITLEBAR_TOP_X:Number=0
 	static var TITLEBAR_TOP_Y:Number=0
 	static var TITLEBAR_TOP_WIDTH:Number=Stage.width
-	static var TITLEBAR_TOP_HEIGHT:Number=Config.TITLEBAR_PADDING*2+Config.TITLEBAR_FONTSIZE;
-	static var TITLEBAR_BOTTOM_X:Number=0;
-	static var TITLEBAR_BOTTOM_HEIGHT:Number=Config.TITLEBAR_PADDING*2+Config.TITLEBAR_FONTSIZE;
-	static var TITLEBAR_BOTTOM_WIDTH:Number=Stage.width;
-	static var TITLEBAR_BOTTOM_Y:Number = Stage.height-Config.TITLEBAR_BOTTOM_HEIGHT;
+	static var TITLEBAR_TOP_HEIGHT:Number=Config.TITLEBAR_PADDING*3+Config.TITLEBAR_FONTSIZE*3;
 	
 	static var TITLEBAR_FILESELECTOR_BUTTON_WIDTH:Number=50;
 	static var TITLEBAR_FILESELECTOR_BUTTON_HEIGHT:Number=30;
@@ -39,9 +35,18 @@ class Config {
 	
 	static var TITLEBAR_TITLE_X:Number=Config.TITLEBAR_PADDING;
 	static var TITLEBAR_TITLE_Y:Number=0;
+	static var TITLEBAR_TITLE_WIDTH:Number=Stage.width;
+	static var TITLEBAR_TITLE_HEIGHT:Number=Config.TITLEBAR_FONTSIZE;
 	
 	static var TITLEBAR_TIME_X:Number=Config.TITLEBAR_PADDING;
-	static var TITLEBAR_TIME_Y:Number=Stage.height - Config.TITLEBAR_PADDING - TITLEBAR_FONTSIZE;
+	static var TITLEBAR_TIME_Y:Number= TITLEBAR_FONTSIZE + Config.TITLEBAR_PADDING;
+	static var TITLEBAR_TIME_WIDTH:Number=300;
+	static var TITLEBAR_TIME_HEIGHT:Number=Config.TITLEBAR_FONTSIZE;
+	
+	static var TITLEBAR_FPS_X:Number=Config.TITLEBAR_PADDING*2+Config.TITLEBAR_TIME_WIDTH;
+	static var TITLEBAR_FPS_Y:Number= TITLEBAR_FONTSIZE + Config.TITLEBAR_PADDING;
+	static var TITLEBAR_FPS_WIDTH:Number=Config.TITLEBAR_TIME_X+Config.TITLEBAR_TIME_WIDTH+Config.TITLEBAR_PADDING;
+	static var TITLEBAR_FPS_HEIGHT:Number=Config.TITLEBAR_FONTSIZE;
 	
 	
 	static var WIIBUTTON_MAXSCALE:Number=170;
@@ -75,5 +80,18 @@ class Config {
 	
 	static var FILESELECTOR_HEADER_HEIGHT:Number = Config.FILESELECTOR_HEIGHT - (Config.FILESELECTOR_FILEBUTTON_HEIGHT*Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY+(Config.FILESELECTOR_PADDING*(Config.FILESELECTOR_FILEBUTTON_NR_VERTICALLY+1)))
 	
-	static var DRAGGER_SENSIBILITY:Number=10; // regard any movement smaller that sqrt(this number) during mousedown not as dragging
+	static var DRAGGER_SENSIBILITY:Number=Math.pow(25,2); // regard any movement smaller that sqrt(this number) during mousedown not as dragging
+	
+	static var PLAYLIST_BGCOLOR:Number = 0x3333FF
+	static var PLAYLIST_X:Number = 0
+	static var PLAYLIST_Y:Number = 0
+	static var PLAYLIST_WIDTH:Number = Stage.width/3
+	static var PLAYLIST_HEIGHT:Number = Stage.height
+	static var PLAYLIST_ENTRYHEIGHT:Number = 20
+	static var PLAYLIST_PADDING:Number = 5
+	
+	static var PLAYLISTENTRY_FONTSIZE:Number = 20
+	static var PLAYLISTENTRY_FONTCOLOR_INACTIVE:Number = 0xdfdfff
+	static var PLAYLISTENTRY_FONTCOLOR_ACTIVE:Number = 0xdfdfff
+	
 }
