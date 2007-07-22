@@ -109,7 +109,7 @@
 					aEntry.push(new PlaylistEntry(aFile[i]));
 				}
 				var nr:Number = self.playlist.addEntries(aEntry)
-				self.playlist.selectEntry(nr);
+				self.playlist.selectNext(nr);
 			})
 			
 			fileSelector.draw(root)

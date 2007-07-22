@@ -92,11 +92,16 @@ class Config {
 	static var PLAYLIST_Y:Number = 0
 	static var PLAYLIST_WIDTH:Number = Stage.width/3
 	static var PLAYLIST_HEIGHT:Number = Stage.height
-	static var PLAYLIST_ENTRYHEIGHT:Number = 20
+	static var PLAYLIST_ENTRYHEIGHT:Number = 25
 	static var PLAYLIST_PADDING:Number = 5
+	
+	static var PLAYLIST_LIST_BGCOLOR:Number = 0x4444FF
+	static var PLAYLIST_LIST_Y:Number = 40
+	static var PLAYLIST_LIST_WIDTH:Number = Config.PLAYLIST_WIDTH
+	static var PLAYLIST_LIST_HEIGHT:Number = Config.PLAYLIST_HEIGHT-Config.PLAYLIST_LIST_Y*2
 	
 	static var PLAYLISTENTRY_FONTSIZE:Number = 20
 	static var PLAYLISTENTRY_FONTCOLOR_INACTIVE:Number = 0xdfdfff
-	static var PLAYLISTENTRY_FONTCOLOR_ACTIVE:Number = 0xdfdfff
+	static var PLAYLISTENTRY_FONTCOLOR_ACTIVE:Number = 0xffff7f
 	
 }
