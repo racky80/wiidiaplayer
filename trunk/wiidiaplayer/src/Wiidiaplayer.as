@@ -33,6 +33,7 @@
 
 		
 		this.titlebar = new Titlebar(	function() {self.fileSelector.open(); self.titlebar.forceHideMe(true);},
+										function() {self.playlist.show();},
 										function() {self.video.pause()} ,
 										function():Object {return self.getPlaybackStatus()},
 										function():Number {return self.getCurrentFPS()}
@@ -44,9 +45,9 @@
 					self.oLogger.info("playing "+file);
 					self.video.play(file);
 					self.titlebar.setTitle(Util.basename(file))
-				}
-		)
+				})
 		this.playlist.draw(this.root);
+		this.playlist.show(false);
 		
 		openFileSelector();
 		
@@ -97,13 +98,17 @@
 	function openFileSelector(opennew:Boolean) {
 		var self:Wiidiaplayer = this
 		if (!fileSelector || opennew) {
-			fileSelector = new FileSelector(function(file:String) {
+			fileSelector = new FileSelector(function(aFile:/*String*/Array) {
 				self.closeFileSelector()
-				if (file == "") {
+				if (aFile.length == 0) {
 					return;
 				}
-				var a:/*PlaylistEntry*/Array = [new PlaylistEntry(file)];
-				var nr:Number = self.playlist.addEntries(a)
+				var aEntry:/*PlaylistEntry*/Array = new Array();
+				for(var i:Number=0;i<aFile.length;i++) {
+					self.oLogger.info("play: "+aFile[i]);
+					aEntry.push(new PlaylistEntry(aFile[i]));
+				}
+				var nr:Number = self.playlist.addEntries(aEntry)
 				self.playlist.selectEntry(nr);
 			})
 			

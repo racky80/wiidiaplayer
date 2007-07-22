@@ -10,22 +10,25 @@ class Titlebar {
 	private var visibilityTimer:Number;
 	private var targetalpha:Number;
 	private var openfileselector:Function;
+	private var toggleplaylist:Function;
 	private var pausefunction:Function;
 	private var timeproviderfunction:Function;
 	private var fpsproviderfunction:Function;
 	private var fileselector_btn:WiiButton;
 	private var pause_btn:WiiButton;
+	private var playlist_btn:WiiButton;
 	private var forceshow:Boolean = false
 	private var forcehide:Boolean = false
 	
 
-	public function Titlebar(openfileselector:Function, pausefunction:Function, timeproviderfunction:Function, fpsproviderfunction:Function) {
+	public function Titlebar(openfileselector:Function, toggleplaylist:Function, pausefunction:Function, timeproviderfunction:Function, fpsproviderfunction:Function) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		this.oLogger.info("__init__ "+__CLASS__);
 		targetalpha = 0;
 		this.openfileselector=openfileselector
+		this.toggleplaylist=toggleplaylist
 		this.pausefunction=pausefunction
 		this.timeproviderfunction = timeproviderfunction
 		this.fpsproviderfunction = fpsproviderfunction
@@ -72,10 +75,15 @@ class Titlebar {
 		fileselector_btn.setPosition(Config.TITLEBAR_FILESELECTOR_X,Config.TITLEBAR_FILESELECTOR_Y)
 		fileselector_btn.setClickHandler(this.openfileselector)
 		
-		pause_btn = new WiiButton("||", Config.TITLEBAR_FILESELECTOR_BUTTON_WIDTH, Config.TITLEBAR_FILESELECTOR_BUTTON_HEIGHT);
+		pause_btn = new WiiButton("||", Config.TITLEBAR_PAUSE_BUTTON_WIDTH, Config.TITLEBAR_PAUSE_BUTTON_HEIGHT);
 		pause_btn.draw(titlebar_mc, true)
 		pause_btn.setPosition(Config.TITLEBAR_PAUSE_X,Config.TITLEBAR_PAUSE_Y)
 		pause_btn.setClickHandler(pausefunction)
+		
+		playlist_btn = new WiiButton("=", Config.TITLEBAR_PLAYLIST_BUTTON_WIDTH, Config.TITLEBAR_PLAYLIST_BUTTON_HEIGHT);
+		playlist_btn.draw(titlebar_mc, true)
+		playlist_btn.setPosition(Config.TITLEBAR_PLAYLIST_X,Config.TITLEBAR_PLAYLIST_Y)
+		playlist_btn.setClickHandler(toggleplaylist)
 		
 		this.oLogger.debug("done drawing titlebar")
 	}
