@@ -1,5 +1,10 @@
 
-class FileFlvStreamProviderTemporarilyNoChunkException(Exception): pass
+class FileFlvStreamProviderTemporarilyNoChunkException(Exception):
+    def __init__(self, starttimestamp, currenttimestamp, targettimestamp):
+        self.starttimestamp = starttimestamp
+        self.currenttimestamp = currenttimestamp
+        self.targettimestamp = targettimestamp
+    
 class FileFlvStreamProviderStreamEndedException(Exception): pass
     
 class FlvStreamProvider:
