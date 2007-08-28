@@ -28,6 +28,7 @@ class ConvertableFlvStreamProvider (fileflvstreamprovider.FileFlvStreamProvider)
     def __del__(self):
         self.convertor.kill()
         os.unlink(self.getFileName())
+        logging.info(self.convertor.getoutput())
         logging.info("stream deleted")
 
     @classmethod

@@ -50,7 +50,7 @@ class WiiServerExternalprogramResource(resource.Resource):
         self.request.connectionclosed=False
         path = os.path.abspath('/'+os.path.sep.join(request.postpath));
         fullpath=os.path.abspath(self.DEFAULTPATH+path);
-	processProtocolClass=self.getProcessPassthroughClass()
+        processProtocolClass=self.getProcessPassthroughClass()
         processProtocol=processProtocolClass(request);
         ext=os.path.splitext(fullpath)[1]
         executable, arg = self.getCommand(fullpath)
@@ -61,6 +61,12 @@ class WiiServerExternalprogramResource(resource.Resource):
     def connectionClosed(self, reason):
         self.request.connectionclosed=True
         print "Help, I'm closed"
+
+class PrintFeedback(resource.Resource):
+    isLeaf=True
+    def render_GET(self, request):
+        print ("Feedback recieved: %s"%'/'.join(request.postpath))
+        return ("Feedback recieved: %s"%request.postpath)
 
 
 class GetDir(WiiServerExternalprogramResource):
@@ -109,6 +115,7 @@ root = static.File(rootdir)
 root.putChild('getdir',GetDir())
 root.putChild('getfile',GetFile())
 root.putChild('getinfo',GetInfo())
+root.putChild('feedback',PrintFeedback())
 site = server.Site(root)
 reactor.listenTCP(1935, rtmp.RTMPServerFactory( ))
 reactor.listenTCP(80, site)
