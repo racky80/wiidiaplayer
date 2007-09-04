@@ -464,14 +464,20 @@ class RTMPProtocol(protocol.Protocol):
         now = time.time()*1000
         chunks_sent=0;
         for streamid in self.sStream:
-            if self.sStream[streamid]["play"] and not self.sStream[streamid]["play"]["paused"] and not self.sStream[streamid]["play"]["ended"]:
-                firsttimestamp = 0;
-                while True:
-                    try:
-                        chunk = self.sStream[streamid]["play"]["provider"].getFLVChunk()
-                    except flvstreamprovider.FileFlvStreamProviderTemporarilyNoChunkException, e:
-                        logging.info("Breaking because not enough data available (sent %d chunks); (start: %d, current: %d, target: %d)"%(chunks_sent, e.starttimestamp, e.currenttimestamp, e.targettimestamp))
-                        if e.targettimestamp > 0:
+            if self.sStream[streamid]["play"] and not self.sStream[streamid]["play"]["ended"]:
+                if self.sStream[streamid]["play"]["paused"]:
+                    self.sStream[streamid]["play"]["provider"].buildSeekIndex()
+                else:
+                    firsttimestamp = 0;
+                    while True:
+                        try:
+                            chunk = self.sStream[streamid]["play"]["provider"].getFLVChunk()
+                        except flvstreamprovider.FileFlvStreamProviderTemporarilyNoChunkException, e:
+                            logging.info("Breaking because not enough data available (sent %d chunks); (start: %d, current: %d, target: %d)"%(chunks_sent, e.starttimestamp, e.currenttimestamp, e.targettimestamp))
+                            break;
+                        except flvstreamprovider.FileFlvStreamProviderStreamEndedException:
+                            logging.info("Breaking and stopping playback because stream ended (sent %d chunks)"%chunks_sent)
+                            self.sStream[streamid]["play"]["ended"] = True;
                             call = {
                                     "name": "onStatus",
                                     "id": 0,
@@ -479,64 +485,61 @@ class RTMPProtocol(protocol.Protocol):
                                              None,
                                              {
                                               "level": "status",
-                                              "code": "Server.Rendering.Busy",
-                                              "starttime": e.starttimestamp/1000,
-                                              "currenttime": e.currenttimestamp/1000,
-                                              "targettime": e.targettimestamp/1000,
+                                              "code": "NetStream.Buffer.Flush",
                                              }
                                             ]
                                     }
                             self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
-                        break;
-                    except flvstreamprovider.FileFlvStreamProviderStreamEndedException:
-                        logging.info("Breaking and stopping playback because stream ended (sent %d chunks)"%chunks_sent)
-                        self.sStream[streamid]["play"]["ended"] = True;
-                        call = {
-                                "name": "onStatus",
-                                "id": 0,
-                                "argv": [
-                                         None,
-                                         {
-                                          "level": "status",
-                                          "code": "NetStream.Buffer.Flush",
-                                         }
-                                        ]
-                                }
-                        self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
-                        break;
-                    if chunk == None:
-                        # the chunk available is not for sending
-                        continue
-                    
-                    if not self.sStream[streamid]["play"]["playstartsent"]:
-                        logging.info("Sending playstart")
-                        call = {
-                                "name": "onStatus",
-                                "id": 0,
-                                "argv": [
-                                         None,
-                                         {
-                                          "level": "status",
-                                          "code": "NetStream.Play.Start",
-                                         }
-                                        ]
-                                }
-                        self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
-                        self.sStream[streamid]["play"]["playstartsent"]=True
-
-                    self.sendFLVChunk(self.sStream[streamid]["channelid"], chunk, streamid, chunk.time)
-                    chunks_sent +=1
-                    if firsttimestamp == 0: #note - after seeking timestamps of 0 are sent, so we ignore them
-                        firsttimestamp = chunk.time
-                    
-                    if chunk.time > firsttimestamp + RTMPProtocol.FLV_CHUNKSEND_INTERVAL_SECONDS*1500:
-                        logging.info("Breaking because we've sent 1.5 times the send interval (sent %d chunks)"%chunks_sent)
-                        break;
-                    if self.sStream[streamid]["play"]["starttime"] == None and chunk.time > 0:    # reset the starttime after a seek (which may take longer than intended)
-                        self.sStream[streamid]["play"]["starttime"] = time.time()*1000-chunk.time - RTMPProtocol.CLIENT_BUFFERLENGTH_SECONDS*1000
-                    if self.sStream[streamid]["play"]["starttime"] != None and chunk.time + self.sStream[streamid]["play"]["starttime"] > now:
-                        logging.info("Breaking because we're up to date (sent %d chunks)"%chunks_sent)
-                        break;
+                            break;
+                        if chunk == None:
+                            # the chunk available is not for sending
+                            logging.info("Breaking because we're waiting for right chunk to become available")
+                            break
+                        
+                        if not self.sStream[streamid]["play"]["playstartsent"]:
+                            logging.info("Sending playstart")
+                            call = {
+                                    "name": "onStatus",
+                                    "id": 0,
+                                    "argv": [
+                                             None,
+                                             {
+                                              "level": "status",
+                                              "code": "NetStream.Play.Start",
+                                             }
+                                            ]
+                                    }
+                            self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
+                            self.sStream[streamid]["play"]["playstartsent"]=True
+    
+                        self.sendFLVChunk(self.sStream[streamid]["channelid"], chunk, streamid, chunk.time)
+                        chunks_sent +=1
+                        if firsttimestamp == 0: #note - after seeking timestamps of 0 are sent, so we ignore them
+                            firsttimestamp = chunk.time
+                        
+                        if chunk.time > firsttimestamp + RTMPProtocol.FLV_CHUNKSEND_INTERVAL_SECONDS*1500:
+                            logging.info("Breaking because we've sent 1.5 times the send interval (sent %d chunks)"%chunks_sent)
+                            break;
+                        if self.sStream[streamid]["play"]["starttime"] == None and chunk.time > 0:    # reset the starttime after a seek (which may take longer than intended)
+                            self.sStream[streamid]["play"]["starttime"] = time.time()*1000-chunk.time - RTMPProtocol.CLIENT_BUFFERLENGTH_SECONDS*1000
+                        if self.sStream[streamid]["play"]["starttime"] != None and chunk.time + self.sStream[streamid]["play"]["starttime"] > now:
+                            logging.info("Breaking because we're up to date (sent %d chunks)"%chunks_sent)
+                            break;
+                mediainfo = self.sStream[streamid]["play"]["provider"].getMediaInfo()
+                call = {
+                        "name": "onStatus",
+                        "id": 0,
+                        "argv": [
+                                 None,
+                                 {
+                                  "level": "status",
+                                  "code": "Server.Media.Info",
+                                  "totallength": mediainfo["totallength"]/1000,
+                                  "availablelength": mediainfo["availablelength"]/1000,
+                                 }
+                                ]
+                        }
+                self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
                 
 
    

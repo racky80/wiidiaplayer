@@ -46,6 +46,9 @@ class AsynchronousProgramExecuter:
             raise "Process not finished yet"
         return "".join(self.__output)
 
+    def getoutputsofar(self):
+        return "".join(self.__output)
+
     def getprogressiveoutput(self):
         '''
           gets the output up to the point we are now, since the last time this function was called
