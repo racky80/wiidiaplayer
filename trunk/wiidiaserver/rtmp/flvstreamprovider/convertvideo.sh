@@ -20,11 +20,10 @@ trap stop_encoding TERM;
 trap stop_encoding EXIT;
 
 FPS=17
-
 nice -n 2 /usr/bin/mencoder "$1" \
 				-of lavf -lavfopts format=asf \
                 -oac pcm -af resample=44100:0:1 \
-                -ovc raw -vf scale=400:224 -ofps $FPS \
+                -ovc raw -vf scale=400:224 \
                 -o /dev/fd/3 3>&1 >/var/log/mencoder/1 2>&1 | \
         nice -n 1 /usr/bin/mencoder /dev/stdin \
         		-of lavf -lavfopts format=flv \
@@ -34,6 +33,5 @@ nice -n 2 /usr/bin/mencoder "$1" \
 
 
 while [ -n "$(getmencoderchildids)" ]; do
-	echo "$(getmencoderchildids)"
 	sleep 1;
 done

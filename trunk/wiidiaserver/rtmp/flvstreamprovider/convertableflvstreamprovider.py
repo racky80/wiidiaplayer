@@ -36,4 +36,3 @@ class ConvertableFlvStreamProvider (fileflvstreamprovider.FileFlvStreamProvider)
         '''returns whether a provider can provide the given resource'''
         #this is an abstract class
         return False
-        
