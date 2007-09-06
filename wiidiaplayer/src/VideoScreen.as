@@ -12,8 +12,8 @@
 	private var seekoffset:Number
 	private var paused:Boolean
 	private var stopped:Boolean
-	private var serversiderenderpos:Number
-	private var serversiderenderpct:Number
+	private var medialength:Number
+	private var mediaavailable:Number
 
 	public function VideoScreen(streamendcallback:Function) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
@@ -35,6 +35,7 @@
 		ns.onStatus = function(infoObject:Object) {self.onStatus(infoObject)}
 		this.video.attachVideo(this.ns);
 		this.oLogger.info(mc)
+		
 	}
 	
 	public function playTest() {
@@ -67,12 +68,14 @@
 	}
 	
 	public function getStatus():Object {
-		var result:Object = {}
+		var result:Object = {
+			medialength: medialength,
+			mediaavailable: mediaavailable,
+			timeseconds: ns.time
+		}
 		if (seekoffset !== undefined) {
 			result["status"] = Wiidiaplayer.TIME_STATUS_SEEK
 			result["seekoffset"] = seekoffset
-			result["serversiderenderpos"] = serversiderenderpos
-			result["serversiderenderpct"] = serversiderenderpct
 		} else if (stopped) {
 			result["status"] = Wiidiaplayer.TIME_STATUS_STOP
 		} else if (paused) {
@@ -80,7 +83,6 @@
 		} else {
 			result["status"] = Wiidiaplayer.TIME_STATUS_PLAY
 		}
-		result["timeseconds"] = ns.time
 		return result;
 	}
 	
@@ -95,21 +97,25 @@
 				seekoffset = undefined
 				paused = false
 				stopped = false
-				serversiderenderpos = undefined
-				serversiderenderpct = undefined
+				medialength = undefined
+				mediaavailable = undefined
 			break;
 			case "NetStream.Buffer.Flush":
 				flushingBuffer = true
 			break;
+			case "NetStream.Error":
+				// we'll just pretend nothing happened and play the next file
+				stopped = true
+				this.streamendcallback()
 			case "NetStream.Buffer.Empty":
 				if (flushingBuffer) {
 					stopped = true
 					this.streamendcallback()
 				}
 			break;
-			case "Server.Rendering.Busy":
-				serversiderenderpos = infoObject["currenttime"]
-				serversiderenderpct = (infoObject["currenttime"]-infoObject["starttime"])/(infoObject["targettime"]-infoObject["starttime"])
+			case "Server.Media.Info":
+				medialength = infoObject["totallength"]
+				mediaavailable = infoObject["availablelength"]
 			break;
 			default:
 				oLogger.info("onStatus received:")

@@ -60,6 +60,15 @@ class Util {
 		return ""+Math.floor(n%100)
 	}
 	
+	static function sendFeedback(s:String) {
+		if (!_root.lv) {
+			_root.lv = new Array();
+		}
+		var lv:LoadVars = new LoadVars()
+		lv.load('/feedback/'+escape(s))
+		_root.lv.append(lv)
+	}
+	
 	
 	
 	

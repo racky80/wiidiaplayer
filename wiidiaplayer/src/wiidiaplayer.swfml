@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<movie width="800" height="450" framerate="25" version="7">
+<movie width="800" height="448" framerate="12" version="7">
 	<background color="#FFFFFF" />
 	<frame>
 		<library>
 			<font id="defaultfont" import="/usr/share/fonts/corefonts/arial.ttf" size="30"/>
 			<clip id="VideoDisplay">
 				<frame>
-					<video id="vid" width="800" height="450" smoothing="3" />
+					<video id="vid" width="800" height="448" smoothing="0" />
 					<place id="vid" name="vid" />
 				</frame>
 			</clip>
+			<sound id="c1" import="click1.mp3" />
+			<sound id="c2" import="click2.mp3" />
 		</library>
 	</frame>
 </movie>
