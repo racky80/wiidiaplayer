@@ -136,7 +136,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
                 return None
             if chunk.CHUNKTYPE == util.flv.FLVAudioChunk.CHUNKTYPE:
                 if chunk.time < self.seekStatus["timestamp"]:
-                    chunk = self.getFLVChunk()
+                    return None
                 else:
                     if not self.seekStatus["audiosync"]:
                         chunk.time=0;
