@@ -11,6 +11,8 @@
 	private var dragger:Dragger;
 	private var playlist:Playlist;
 	
+	private var s:Sound;
+	
 	
 	static public var TIME_STATUS_STOP:Number=1;
 	static public var TIME_STATUS_PAUSE:Number=2;
@@ -18,6 +20,7 @@
 	static public var TIME_STATUS_SEEK:Number=4;
 	
 	function Wiidiaplayer(rootclip:MovieClip) {
+		
 		var self:Wiidiaplayer = this
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
@@ -30,13 +33,14 @@
 		
 		video = new VideoScreen(function() {self.playlist.selectNext()} );
 		video.draw(this.root);
-
 		
 		this.titlebar = new Titlebar(	function() {self.fileSelector.open(); self.titlebar.forceHideMe(true);},
 										function() {self.playlist.show();},
 										function() {self.video.pause()} ,
 										function():Object {return self.getPlaybackStatus()},
-										function():Number {return self.getCurrentFPS()}
+										function():Number {return self.getCurrentFPS()},
+										function() {self.playlist.selectNext()},
+										function() {self.playlist.selectPrevious()}
 										);
 		this.titlebar.draw(this.root)
 		
@@ -55,6 +59,9 @@
 									function(dx:Number, dy:Number) {self.draggingEnded(dx, dy)},
 									function(dx:Number, dy:Number) {self.draggingProgress(dx, dy)}
 								);
+		setInterval(function() {
+				Util.sendFeedback(""+self.getCurrentFPS())
+		}, 5000);
 	}
 	
 	function draggingStart() {
@@ -70,12 +77,24 @@
 	function draggingEnded(dx:Number, dy:Number) {
 		this.titlebar.forceShowMe(false);
 		oLogger.info("dragging ended: "+dx+", "+dy )
-		video.pause(false)
-		video.seek(getSeekFromDrag(dx))
+		var status:Object = video.getStatus()
+		if (status["status"] != Wiidiaplayer.TIME_STATUS_STOP)  {
+			video.pause(false)
+			video.seek(getSeekFromDrag(dx))
+		}
 	}
 	
 	function getSeekFromDrag(dx:Number):Number {
-		return Config.APPLICATION_DRAGGING_SCREENWIDTH_TIME_SECONDS*dx/Stage.width;
+		var status:Object = video.getStatus()
+		var medialength:Number = status["medialength"]
+		if (medialength == undefined) {
+			medialength = status["timeseconds"]*2;
+		}
+		if (dx > 0) {
+			return (medialength -status["timeseconds"])*Math.min(1, Math.pow(dx,2)/Math.pow(Stage.width-2*Config.APPLICATION_DRAGGING_SCREENSIDES_SIZE,2));
+		} else {
+			return -(status["timeseconds"])*Math.min(1, Math.pow(dx,2)/Math.pow(Stage.width-2*Config.APPLICATION_DRAGGING_SCREENSIDES_SIZE,2));
+		}
 	}
 	
 	/**

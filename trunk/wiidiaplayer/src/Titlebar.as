@@ -14,14 +14,21 @@ class Titlebar {
 	private var pausefunction:Function;
 	private var timeproviderfunction:Function;
 	private var fpsproviderfunction:Function;
+	private var statusproviderfunction:Function
+	private var nextfunction:Function
+	private var previousfunction:Function
+	
+	
 	private var fileselector_btn:WiiButton;
 	private var pause_btn:WiiButton;
+	private var next_btn:WiiButton;
+	private var previous_btn:WiiButton;
 	private var playlist_btn:WiiButton;
 	private var forceshow:Boolean = false
 	private var forcehide:Boolean = false
-	
+	private var progressbar:ProgressBar
 
-	public function Titlebar(openfileselector:Function, toggleplaylist:Function, pausefunction:Function, timeproviderfunction:Function, fpsproviderfunction:Function) {
+	public function Titlebar(openfileselector:Function, toggleplaylist:Function, pausefunction:Function, timeproviderfunction:Function, fpsproviderfunction:Function, nextfunction:Function, previousfunction:Function) {
 		this.oLogger = new LuminicBox.Log.Logger(__CLASS__);
 		this.oLogger.setLevel(Config.GLOBAL_LOGLEVEL)
 		this.oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
@@ -32,6 +39,9 @@ class Titlebar {
 		this.pausefunction=pausefunction
 		this.timeproviderfunction = timeproviderfunction
 		this.fpsproviderfunction = fpsproviderfunction
+		this.statusproviderfunction = timeproviderfunction
+		this.nextfunction = nextfunction
+		this.previousfunction = previousfunction
 	}
 	
 	public function draw(mc:MovieClip) {
@@ -84,8 +94,25 @@ class Titlebar {
 		playlist_btn.draw(titlebar_mc, true)
 		playlist_btn.setPosition(Config.TITLEBAR_PLAYLIST_X,Config.TITLEBAR_PLAYLIST_Y)
 		playlist_btn.setClickHandler(toggleplaylist)
+
+
+		next_btn = new WiiButton(">>", Config.TITLEBAR_NEXT_BUTTON_WIDTH, Config.TITLEBAR_NEXT_BUTTON_HEIGHT)
+		next_btn.draw(titlebar_mc, true)
+		next_btn.setPosition(Config.TITLEBAR_NEXT_BUTTON_X,Config.TITLEBAR_NEXT_BUTTON_Y)
+		next_btn.setClickHandler(nextfunction)
+
+		previous_btn = new WiiButton("<<", Config.TITLEBAR_PREVIOUS_BUTTON_WIDTH, Config.TITLEBAR_PREVIOUS_BUTTON_HEIGHT)
+		previous_btn.draw(titlebar_mc, true)
+		previous_btn.setPosition(Config.TITLEBAR_PREVIOUS_BUTTON_X,Config.TITLEBAR_PREVIOUS_BUTTON_Y)
+		previous_btn.setClickHandler(previousfunction)
 		
+
+		progressbar = new ProgressBar(statusproviderfunction)
+		progressbar.draw(titlebar_mc);
+
 		this.oLogger.debug("done drawing titlebar")
+
+
 	}
 	
 	private function enterFrame() {
@@ -96,6 +123,7 @@ class Titlebar {
 			var oTime:Object = timeproviderfunction();
 			setTime(oTime["status"], oTime["timeseconds"], oTime["seekoffset"], oTime["serversiderenderpos"], oTime["serversiderenderpct"])
 			setFPS(fpsproviderfunction())
+			progressbar.update();
 		} else {
 			titlebar_mc._visible = false;
 		}

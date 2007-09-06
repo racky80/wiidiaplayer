@@ -123,17 +123,9 @@ class WiiButton extends MovieClip {
 		
 		mc.targetscaling = 100;
 		mc.currentscaling = mc.targetscaling;
-		mc.onEnterFrame = function () {
-			if (this.currentscaling != this.targetscaling) {
-				var diff:Number = Math.max(Math.min(this.targetscaling-this.currentscaling, Config.WIIBUTTON_SCALE_SPEED), -Config.WIIBUTTON_SCALE_SPEED);
-				this._xscale += diff;
-				this._yscale += diff;
-				this.currentscaling += diff;
-			}
-		}
 
 		mc.onRollOut = function() {
-			this.targetscaling = 100;
+			mc.targetscaling = 100;
 		}
 		
 		WiiButton.enableGrowingButton(mc)
@@ -146,8 +138,22 @@ class WiiButton extends MovieClip {
 		oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
 		mc.onRollOver = function() {
 			// put this button on the top of the pile
-			this.swapDepths(this._parent.getNextHighestDepth()-1)
-			this.targetscaling = Config.WIIBUTTON_MAXSCALE;
+			mc.swapDepths(mc._parent.getNextHighestDepth()-1)
+			mc.targetscaling = Config.WIIBUTTON_MAXSCALE;
+
+			mc.onEnterFrame = function () {
+				if (!mc.hitTest(_root._xmouse,_root._ymouse)) {
+					mc.targetscaling=100;
+				}
+				if (mc.currentscaling != mc.targetscaling) {
+					var diff:Number = Math.max(Math.min(mc.targetscaling-mc.currentscaling, Config.WIIBUTTON_SCALE_SPEED), -Config.WIIBUTTON_SCALE_SPEED);
+					mc._xscale += diff;
+					mc._yscale += diff;
+					mc.currentscaling += diff;
+				} else if (this.currentscaling == 100) {
+					mc.onEnterFrame=undefined; // resetting this handler after we're done
+				}
+			}
 		}
 	}
 
