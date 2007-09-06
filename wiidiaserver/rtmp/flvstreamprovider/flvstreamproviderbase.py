@@ -6,6 +6,7 @@ class FileFlvStreamProviderTemporarilyNoChunkException(Exception):
         self.targettimestamp = targettimestamp
     
 class FileFlvStreamProviderStreamEndedException(Exception): pass
+class FileFlvStreamProviderStreamErrorException(Exception): pass
     
 class FlvStreamProvider:
     '''abstract class from which all stream providers derive'''

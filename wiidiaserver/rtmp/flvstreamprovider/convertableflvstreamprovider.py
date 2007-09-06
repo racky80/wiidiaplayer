@@ -12,8 +12,11 @@ class ConvertableFlvStreamProvider (fileflvstreamprovider.FileFlvStreamProvider)
         self.filename = "/tmp/convertvideo_%s_%d.flv"%(os.path.basename(resourcename), random.randint(0,1000000))
         commands.getoutput("touch %s"%(commands.mkarg(self.getFileName())))
         fileflvstreamprovider.FileFlvStreamProvider.__init__(self,resourcename)
-        cmd = ["sh", self.getShellConvertingScript(), resourcename, self.getFileName()]
-        self.convertor=util.asynchronousprogramexecuter.AsynchronousProgramExecuter(cmd)
+        if not self.error:
+            cmd = ["sh", self.getShellConvertingScript(), resourcename, self.getFileName()]
+            self.convertor=util.asynchronousprogramexecuter.AsynchronousProgramExecuter(cmd)
+        else:
+            self.convertor=None
         
     def getShellConvertingScript(self):
         #this is an abstract class
@@ -26,10 +29,12 @@ class ConvertableFlvStreamProvider (fileflvstreamprovider.FileFlvStreamProvider)
         return self.convertor.hasfinished();
     
     def __del__(self):
-        self.convertor.kill()
-        os.unlink(self.getFileName())
-        logging.info(self.convertor.getoutput())
+        if self.convertor:
+            self.convertor.kill()
+            os.unlink(self.getFileName())
+            logging.info(self.convertor.getoutput())
         logging.info("stream deleted")
+        
 
     @classmethod
     def supportsresource(cls, resourcename):
