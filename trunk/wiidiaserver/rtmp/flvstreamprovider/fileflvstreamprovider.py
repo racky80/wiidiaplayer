@@ -7,13 +7,18 @@ class FileFlvStreamProvider (FlvStreamProvider):
     
     def __init__(self, resourcename):
         FlvStreamProvider.__init__(self,resourcename)
+        self.error = False
+        try:
+            self.medialength=int(float(commands.getoutput("sh %s/medialength.sh %s"%(commands.mkarg(os.path.dirname(__file__)), commands.mkarg(resourcename))))*1000)
+        except ValueError:
+            self.medialength=0
+            self.error = True
         self.playfile=open(self.getFileName(), "r")
         self.seekfile=open(self.getFileName(), "r")
         self.seekbuffer = util.bufferedstringstream.BufferedStringStream()
         self.flvseeker = util.flv.FLVReader(self.seekbuffer)
         self.aKeyFrame = [{"timestamp":0, "filepos":0}]
         self.maxtimestamp=0
-        self.medialength=int(float(commands.getoutput("sh %s/medialength.sh %s"%(commands.mkarg(os.path.dirname(__file__)), commands.mkarg(resourcename))))*1000)
         self.seekStatus = None
         self.lasttimestamp=0;
 
@@ -103,6 +108,8 @@ class FileFlvStreamProvider (FlvStreamProvider):
         self.buffer.write(bytes)
     
     def getFLVChunk(self):
+        if self.error:
+            raise FileFlvStreamProviderStreamErrorException
         self.buildSeekIndex()
 
         if self.seekStatus and not self.seekStatus["filesync"]: # we are trying to find the file position 

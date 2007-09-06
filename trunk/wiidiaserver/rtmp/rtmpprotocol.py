@@ -491,6 +491,22 @@ class RTMPProtocol(protocol.Protocol):
                                     }
                             self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
                             break;
+                        except flvstreamprovider.FileFlvStreamProviderStreamErrorException:
+                            logging.info("Breaking and stopping playback because stream error (sent %d chunks)"%chunks_sent)
+                            self.sStream[streamid]["play"]["ended"] = True;
+                            call = {
+                                    "name": "onStatus",
+                                    "id": 0,
+                                    "argv": [
+                                             None,
+                                             {
+                                              "level": "status",
+                                              "code": "NetStream.Error",
+                                             }
+                                            ]
+                                    }
+                            self.sendCall(self.sStream[streamid]["channelid"], call, streamid=streamid)
+                            break;
                         if chunk == None:
                             # the chunk available is not for sending
                             logging.info("Breaking because we're waiting for right chunk to become available")
