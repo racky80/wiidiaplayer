@@ -8,12 +8,12 @@ function stop_encoding {
 	echo "now stopping"
 	PIDS="$(getmencoderchildids)"
 	for mypid in $PIDS; do
-		kill $mypid > /dev/null 2&>1;
+		kill $mypid > /dev/null 2>&1;
 	done
 	sleep 2;
 	PIDS="$(getmencoderchildids)"
 	for mypid in $PIDS; do
-		kill -9 $mypid > /dev/null 2&>1;
+		kill -9 $mypid > /dev/null 2>&1;
 	done
 }
 trap stop_encoding TERM;
@@ -28,7 +28,7 @@ nice -n 2 /usr/bin/mencoder "$1" \
         nice -n 1 /usr/bin/mencoder /dev/stdin \
         		-of lavf -lavfopts format=flv \
         		-af resample=44100:0:1 -af channels=2 -oac mp3lame -lameopts cbr:br=128 -mc 0 \
-        		-ovc lavc -lavcopts vcodec=flv:vbitrate=2500:autoaspect:vratetol=1000:keyint=1 -ofps $FPS \
+        		-ovc lavc -lavcopts vcodec=flv:vbitrate=2500:autoaspect:vratetol=1000:keyint=1 -ofps $FPS -vf harddup \
         		-o "$2" > /var/log/mencoder/2 2>&1 &
 
 
