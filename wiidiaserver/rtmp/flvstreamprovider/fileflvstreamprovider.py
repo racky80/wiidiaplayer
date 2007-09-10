@@ -36,8 +36,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
     
     def seek(self, timestamp):
         if timestamp == 0:
-            self.buffer=util.bufferedstringstream.BufferedStringStream()
-            self.flvreader = util.flv.FLVReader(self.buffer)
+            self.seekFile(0)
             self.seekStatus = None
         else:
             self.seekStatus = { "starttmaxtimestamp": None, # we'll fill this in later after we catch up
@@ -54,6 +53,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
         if filepos == 0:
             self.buffer=util.bufferedstringstream.BufferedStringStream()
             self.flvreader = util.flv.FLVReader(self.buffer)
+            self.playfile.seek(0)
         else:
             self.buffer.reset()
             self.playfile.seek(filepos)
