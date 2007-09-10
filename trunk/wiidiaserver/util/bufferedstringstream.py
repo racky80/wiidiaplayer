@@ -12,6 +12,7 @@ class BufferedStringStream:
                      "bytesRead": 0
                      }
         self.bufferBeforeTransaction = []
+        self.deleteOnTransactionDone = []
         
     def read(self,bytes):
         if bytes > self.bytesAvailable():
@@ -23,7 +24,10 @@ class BufferedStringStream:
             datachunk = self.buffer["content"][self.buffer["pointer"][0]][self.buffer["pointer"][1]:]
             toread -= len(datachunk)
             readeddata.append(datachunk)
-            self.buffer["content"][self.buffer["pointer"][0]] = None # clean up to save space
+            if self.amInTransaction():
+                self.deleteOnTransactionDone.append(self.buffer["pointer"][0])
+            else:
+                self.buffer["content"][self.buffer["pointer"][0]] = None # clean up to save space
             self.buffer["pointer"][0] += 1
             self.buffer["pointer"][1] = 0
 #            print(("looping (%d): "%toread)+self.getStatus())
@@ -46,11 +50,19 @@ class BufferedStringStream:
         if len(self.bufferBeforeTransaction) == 0:
             raise BufferedStringStreamTransactionException("Not in transaction")
         self.bufferBeforeTransaction.pop()
+        if not self.amInTransaction():
+            for i in self.deleteOnTransactionDone:
+                self.buffer["content"][i] = None
+            self.deleteOnTransactionDone = []
     
     def transactionRollback(self):
         if len(self.bufferBeforeTransaction) == 0:
             raise BufferedStringStreamTransactionException("Not in transaction")
         self.buffer["pointer"],self.buffer["bytesAvailable"],self.buffer["bytesRead"] = self.bufferBeforeTransaction.pop()
+        self.deleteOnTransactionDone = []
+
+    def amInTransaction(self):
+        return len(self.bufferBeforeTransaction) > 0
     
     def bytesAvailable(self):
         return self.buffer["bytesAvailable"]
