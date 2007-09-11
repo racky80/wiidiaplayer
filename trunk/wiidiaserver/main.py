@@ -132,7 +132,7 @@ def daemonize():
         sys.exit(1)
     
     # Might consider changing this part:    
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.abspath(sys.path[0]))
     os.setsid()
     os.umask(0)
     
@@ -217,6 +217,8 @@ def main():
     reactor.listenTCP(1935, rtmp.RTMPServerFactory( ))
     reactor.listenTCP(8080, site)
     reactor.run()
+
+
 
 if __name__ == '__main__':
     main()
