@@ -2,7 +2,7 @@
 
 from twisted.web import server, resource, static
 from twisted.internet import reactor, protocol, error
-import os, urllib, sys, logging, getopt, errno
+import os, urllib, sys, logging, getopt, errno, time
 import rtmp
 
 sys.path.append(os.path.dirname(__file__));
@@ -122,7 +122,8 @@ def printVersion():
     print "Your copyrights here ;)"
 
 
-def readPid(pidPath):
+def readPidFile(pidPath):
+    # Read the pid file, return none if not exist
     if os.path.exists(pidPath):
         try:
             pidFile = open(pidPath)
@@ -134,31 +135,49 @@ def readPid(pidPath):
     else:
         return None
 
+def savePidFile(pidPath):
+    # Save pid to file:
+    try:
+        pid = os.getpid()
+        pidFile = open(pidPath, 'w')
+        pidFile.write(str(pid))
+        pidFile.close()
+    except OSError:
+        print "Can't save the pid to %s" % pidPath
+        sys.exit(1)
+
+def deletePidFile(pidPath):
+    # Now unlink the pid file
+    try:
+        os.unlink(pidPath)
+    except OSError:
+        print "Can't unlink the pidPath file %s" % pidPath
+        sys.exit(1)
+
+
+def livePid(pid):
+    # Is this pid still up?
+    try:
+        os.kill(pid, 0)
+        return pid
+    except OSError, e:
+        if e.errno == errno.EPERM:
+            return pid
+    return None
+
+def killPid(pid):
+    # Try to kill the old pid file
+    if pid:
+        for j in range(10):
+            if not livePid(pid):
+                break
+            os.kill(pid, 15)
+            time.sleep(1)
+        else:
+            print "Can't kill process %s" % pid
+
+
 def daemonize():
-    pidPath = '/var/run/wiidiaplayer.pid'
-    
-    # Check if it is allready running, first check if the pid file exist
-    if os.path.exists(pidPath):
-        # Read the old pid file:
-        oldPid = readPid(pidPath)
-        
-        # Try to kill the old pid file
-        if oldPid:
-            print oldPid
-            try:
-                os.kill(int(oldPid), 9)
-            except OSError, e:
-                if e.errno == errno.EPERM:
-                    print "Can't kill the old thread (operation not permitted)"
-                    sys.exit(1)
-        
-        # Now unlink the pid file
-        try:
-            os.unlink(pidPath)
-        except OSError:
-            print "Can't unlink the pidPath file"
-            sys.exit(1)
-    
     # Do a first fork
     try:
         pid = os.fork() 
@@ -182,27 +201,16 @@ def daemonize():
         print "Can't fork this process (second fork)"
         sys.exit(1)
     
-    # Save pid to file:
-    try:
-        pid = os.getpid()
-        pidFile = open(pidPath, 'w')
-        pidFile.write(str(pid))
-        pidFile.close()
-    except OSError:
-        print "Can't save the pidFile"
-        sys.exit(1)
-    
     # Write keyboard input to nothing
     dev_null = file('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
     dev_null.close()
 
-
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hdvr:m:")
     except getopt.GetoptError:
-        print_help()
+        printHelp()
         sys.exit(2)
     
     fork = False
@@ -214,7 +222,7 @@ def main():
         if o == '-d':
             fork = True
         if o == '-h':
-            prinHelp()
+            printHelp()
             sys.exit()
         if o == '-v':
             printVersion()
@@ -229,7 +237,7 @@ def main():
         # Send it to the scripts who needs this dir
     #    mediadir = mediadir
     #else:
-    #    print_help()
+    #    printHelp()
     #    sys.exit(0)
     
     # We are going to daemonize, first only save the logs:
@@ -248,6 +256,20 @@ def main():
             daemonize()
         except AttributeError:
             pass
+    
+    # Save pid file (needs to be adjusted to a neat set of functions):
+    pidPath = '/var/run/wiidiaplayer.pid'
+    
+    if os.path.exists(pidPath):
+        # Check if old thread is running, kill it if so:
+        oldPid = readPidFile(pidPath)
+        if oldPid:
+            # Kill this pid
+            killPid(oldPid)
+            # Also delete the pidFile
+            deletePidFile(pidPath)
+        # Now save the pidFile
+        savePidFile(pidPath)
     
     # Here is your normal code...
     logging.basicConfig(level=logging.INFO)
