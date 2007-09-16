@@ -2,7 +2,7 @@
 
 from twisted.web import server, resource, static
 from twisted.internet import reactor, protocol, error
-import os, urllib, sys, logging, getopt
+import os, urllib, sys, logging, getopt, errno
 import rtmp
 
 sys.path.append(os.path.dirname(__file__));
@@ -104,7 +104,7 @@ class GetFile(WiiServerExternalprogramResource):
     def getProcessPassthroughClass(self):
         return ProcessPassthroughprotocol
     
-def print_help():
+def printHelp():
     # Some help information
     print "Usage: main.py -m <mediadir> [-dvh] [-r <rootdir>]"
     print
@@ -115,20 +115,57 @@ def print_help():
     print "  -m   media directory"
     print "  -h   print this message"
 
-def print_version():
+def printVersion():
     # Here you are... Do with it whatever you want
     print "Wiidiaplayer v0.0.0.5"
     print
     print "Your copyrights here ;)"
 
 
+def readPid(pidPath):
+    if os.path.exists(pidPath):
+        try:
+            pidFile = open(pidPath)
+            pid = pidFile.read()
+            pidFile.close()
+            return int(pid.strip())
+        except (ValueError, IOError):
+            return None
+    else:
+        return None
+
 def daemonize():
+    pidPath = '/var/run/wiidiaplayer.pid'
+    
+    # Check if it is allready running, first check if the pid file exist
+    if os.path.exists(pidPath):
+        # Read the old pid file:
+        oldPid = readPid(pidPath)
+        
+        # Try to kill the old pid file
+        if oldPid:
+            print oldPid
+            try:
+                os.kill(int(oldPid), 9)
+            except OSError, e:
+                if e.errno == errno.EPERM:
+                    print "Can't kill the old thread (operation not permitted)"
+                    sys.exit(1)
+        
+        # Now unlink the pid file
+        try:
+            os.unlink(pidPath)
+        except OSError:
+            print "Can't unlink the pidPath file"
+            sys.exit(1)
+    
+    # Do a first fork
     try:
         pid = os.fork() 
         if pid > 0:
             sys.exit(0) 
     except OSError:
-        print "fork() failed"
+        print "Can't fork this process (first fork)"
         sys.exit(1)
     
     # Might consider changing this part:    
@@ -136,22 +173,30 @@ def daemonize():
     os.setsid()
     os.umask(0)
     
-    # Try to get the pid, if it fails exit
+    # Do a second fork fork
     try:
         pid = os.fork()
         if pid > 0:
             sys.exit(0) 
     except OSError:
-        print "fork() failed"
+        print "Can't fork this process (second fork)"
         sys.exit(1)
     
-    # You might want to save the pid to /var/run/<name>.pid, you can deside wheter or not do that
-    #pidFile = 
+    # Save pid to file:
+    try:
+        pid = os.getpid()
+        pidFile = open(pidPath, 'w')
+        pidFile.write(str(pid))
+        pidFile.close()
+    except OSError:
+        print "Can't save the pidFile"
+        sys.exit(1)
     
     # Write keyboard input to nothing
     dev_null = file('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
     dev_null.close()
+
 
 def main():
     try:
@@ -169,10 +214,10 @@ def main():
         if o == '-d':
             fork = True
         if o == '-h':
-            print_help()
+            prinHelp()
             sys.exit()
         if o == '-v':
-            print_version()
+            printVersion()
             sys.exit()
         if o == '-r':
             rootdir = a
