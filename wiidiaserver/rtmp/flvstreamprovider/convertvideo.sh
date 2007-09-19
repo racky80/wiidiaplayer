@@ -19,7 +19,7 @@ function stop_encoding {
 trap stop_encoding TERM;
 trap stop_encoding EXIT;
 
-FPS=17
+FPS=16
 nice -n 2 /usr/bin/mencoder "$1" \
 				-of lavf -lavfopts format=asf \
                 -oac pcm -af resample=44100:0:1 \
