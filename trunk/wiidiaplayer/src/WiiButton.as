@@ -116,6 +116,18 @@ class WiiButton extends MovieClip {
 		}
 	}
 	
+	public function activate(activate:Boolean) {
+        var tfmt:TextFormat = button_text.getNewTextFormat();
+        if (activate) {
+        	tfmt.color=Config.WIIBUTTON_ACTIVE_FONTCOLOR
+        	tfmt.size=Config.WIIBUTTON_ACTIVE_FONTSIZE
+        } else {
+        	tfmt.color=Config.WIIBUTTON_ENABLED_FONTCOLOR
+        	tfmt.size=Config.WIIBUTTON_ENABLED_FONTSIZE
+        }
+        this.button_text.setTextFormat(tfmt)
+	}
+
 	static function makeIntoGrowingButton(mc:MovieClip) {
 		var oLogger:LuminicBox.Log.Logger = new LuminicBox.Log.Logger(__CLASS__);
 		oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
@@ -161,4 +173,5 @@ class WiiButton extends MovieClip {
 	static function disableGrowingButton(mc:MovieClip) {
 		mc.onRollOver = null
 	}
+
 }

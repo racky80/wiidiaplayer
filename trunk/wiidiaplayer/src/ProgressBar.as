@@ -88,6 +88,6 @@ class ProgressBar {
 		this.pointertop._x = Config.PROGRESSBAR_PADDING+Config.PROGRESSBAR_BAR_WIDTH*seekprt
 		this.pointerbottom._x = Config.PROGRESSBAR_PADDING+Config.PROGRESSBAR_BAR_WIDTH*playprt
 		
-		oLogger.info("Drawn statusbar");
+//		oLogger.info("Drawn statusbar");
 	}
 }

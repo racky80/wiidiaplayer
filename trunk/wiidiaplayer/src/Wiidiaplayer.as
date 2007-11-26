@@ -35,7 +35,7 @@
 		video.draw(this.root);
 		
 		this.titlebar = new Titlebar(	function() {self.fileSelector.open(); self.titlebar.forceHideMe(true);},
-										function() {self.playlist.show();},
+										function() {self.playlist.open(); self.titlebar.forceHideMe(true);},
 										function() {self.video.pause()} ,
 										function():Object {return self.getPlaybackStatus()},
 										function():Number {return self.getCurrentFPS()},
@@ -49,9 +49,11 @@
 					self.oLogger.info("playing "+file);
 					self.video.play(file);
 					self.titlebar.setTitle(Util.basename(file))
+				}, function() {
+					self.titlebar.forceHideMe(false);
+					self.playlist.close();
 				})
 		this.playlist.draw(this.root);
-		this.playlist.show(false);
 		
 		openFileSelector();
 		
