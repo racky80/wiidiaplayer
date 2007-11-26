@@ -43,6 +43,7 @@
 	}
 	
 	public function play(file:String) {
+		ns.pause(true); // close any stream already playing
 		this.oLogger.info("playing "+file)
 		this.ns.play(file);
 	}
@@ -116,6 +117,9 @@
 			case "Server.Media.Info":
 				medialength = infoObject["totallength"]
 				mediaavailable = infoObject["availablelength"]
+			break;
+			case "NetStream.Buffer.Full":
+				//ignore
 			break;
 			default:
 				oLogger.info("onStatus received:")
