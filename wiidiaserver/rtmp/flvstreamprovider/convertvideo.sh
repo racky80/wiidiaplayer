@@ -26,12 +26,12 @@ nice -n 2 /usr/bin/mencoder "$1" \
                 -oac pcm -af resample=44100:0:1 \
                 -ovc raw -vf scale=400:224 \
                 -o /dev/fd/3 3>&1 >/var/log/mencoder/1 2>&1 | \
-        (sleep 2; nice -n 1 /usr/bin/mencoder /dev/stdin \
+        nice -n 1 /usr/bin/mencoder /dev/stdin \
 				-msglevel all=7 \
         		-of lavf -lavfopts format=flv \
         		-af resample=44100:0:1 -af channels=2 -oac mp3lame -lameopts cbr:br=128 -mc 0 \
         		-ovc lavc -lavcopts vcodec=flv:vbitrate=2500:autoaspect:vratetol=1000:keyint=1 -ofps $FPS -vf harddup \
-        		-o "$2") > /var/log/mencoder/2 2>&1 &
+        		-o "$2" > /var/log/mencoder/2 2>&1 &
 
 
 while [ -n "$(getmencoderchildids)" ]; do
