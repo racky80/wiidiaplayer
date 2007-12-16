@@ -13,14 +13,15 @@ class FlvStreamProvider:
     
     @classmethod
     def getFlvStreamProvider(cls, resourcename):
-        import convertableaudioflvstreamprovider, convertablevideoflvstreamprovider, fileflvstreamprovider
+        """retrieves a streamprovider object that will play this file or directory"""
+        import convertableaudioflvstreamprovider, convertablevideoflvstreamprovider, convertableffmpegvideoflvstreamprovider, fileflvstreamprovider
         
         cls.PREFERREDPROVIDERS=[
                             fileflvstreamprovider.FileFlvStreamProvider,
                             convertableaudioflvstreamprovider.ConvertableAudioFlvStreamProvider,
+                            convertableffmpegvideoflvstreamprovider.ConvertableFFMpegVideoFlvStreamProvider,
                             convertablevideoflvstreamprovider.ConvertableVideoFlvStreamProvider,
                             ]
-        """retrieves a streamprovider object that will play this file or directory"""
         for provider in FlvStreamProvider.PREFERREDPROVIDERS:
             if provider.supportsresource(resourcename):
                 return provider(resourcename)
