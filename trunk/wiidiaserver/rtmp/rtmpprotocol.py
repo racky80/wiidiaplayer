@@ -80,7 +80,6 @@ class RTMPProtocol(protocol.Protocol):
         
     def checkForParsableContent(self):
         while True:
-            print "."
             if self.state == RTMPProtocol.STATE_WAITINGFORHANDSHAKE:
                 self.input.transactionStart()
                 try:
