@@ -114,6 +114,7 @@ class FileFlvStreamProvider (FlvStreamProvider):
 
         if self.seekStatus and not self.seekStatus["filesync"]: # we are trying to find the file position 
             if self.seekStatus["timestamp"] > self.maxtimestamp:
+                logging.info("seeking past end of available data, waiting for more data")
                 return None
             for i in range(len(self.aKeyFrame))[::-1]:
                 if self.aKeyFrame[i]["timestamp"] <= self.seekStatus["timestamp"]:
@@ -136,7 +137,8 @@ class FileFlvStreamProvider (FlvStreamProvider):
                 return None
             if chunk.CHUNKTYPE == util.flv.FLVAudioChunk.CHUNKTYPE:
                 if chunk.time < self.seekStatus["timestamp"]:
-                    return None
+                    logging.info("audio frame we don't want")
+                    return self.getFLVChunk()
                 else:
                     if not self.seekStatus["audiosync"]:
                         chunk.time=0;
