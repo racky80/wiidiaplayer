@@ -1,9 +1,6 @@
 import cStringIO
 import logging, time, os
 from twisted.internet import reactor, protocol, task
-import util.amf
-import util.amfutil
-from amf import amf0
 import pyamf
 import util
 import flvstreamprovider
