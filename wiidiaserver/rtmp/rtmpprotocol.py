@@ -4,6 +4,7 @@ from twisted.internet import reactor, protocol, task
 import util.amf
 import util.amfutil
 from amf import amf0
+import pyamf
 import util
 import flvstreamprovider
 
@@ -64,7 +65,6 @@ class RTMPProtocol(protocol.Protocol):
                        RTMPProtocol.COMMANDKIND_PING: self.cmdPing,
                        }
         
-        
     def connectionMade(self):
         self.state = RTMPProtocol.STATE_WAITINGFORHANDSHAKE
         logging.info("Connected to %s." % (self.transport.getPeer( ).host));
@@ -83,6 +83,7 @@ class RTMPProtocol(protocol.Protocol):
         
     def checkForParsableContent(self):
         while True:
+            print "."
             if self.state == RTMPProtocol.STATE_WAITINGFORHANDSHAKE:
                 self.input.transactionStart()
                 try:
@@ -144,14 +145,13 @@ class RTMPProtocol(protocol.Protocol):
     def handleAMFPacket(self, amfpacket):
         if amfpacket["header"]["kind"] == RTMPProtocol.KIND_KCALL:
             logging.debug("Decoding call: \n%s"%util.general.getBinaryStream(amfpacket["data"]))
-            input = util.amfutil.ByteStream(amfpacket["data"])
+            input = pyamf.util.BufferedByteStream(amfpacket["data"])
+            decoder = pyamf.decode(input)
             callobject = {}
-            amfreader = util.amf.AMF0Parser(input)
-            callobject["name"]=amfreader.readElement()
-            callobject["id"]=amfreader.readElement()
-            callobject["argv"] = []
-            while input.peek() != None:
-                callobject["argv"].append(amfreader.readElement())
+            
+            callobject["name"]=decoder.next()
+            callobject["id"]=decoder.next()
+            callobject["argv"] = list(decoder)
 			
             logging.debug("Received a KCall %s (header %s)" %(repr(callobject), repr(amfpacket["header"])))
             try:
@@ -203,10 +203,10 @@ class RTMPProtocol(protocol.Protocol):
     
     def sendCall(self, channelid, call, streamid=0):
         stream = cStringIO.StringIO()
-        amf0.write_string(call["name"], stream)
-        amf0.write_number(call["id"], stream)
+        stream.write(pyamf.encode(call["name"]).getvalue());
+        stream.write(pyamf.encode(call["id"]).getvalue());
         for arg in call["argv"]:
-            amf0.write_data(arg, stream)
+            stream.write(pyamf.encode(arg).getvalue())
         self.send(channelid=channelid, data=stream.getvalue(), kind=RTMPProtocol.KIND_KCALL, streamid=streamid)
         
     def send(self, channelid, data, kind, streamid=0, timestamp=0):
