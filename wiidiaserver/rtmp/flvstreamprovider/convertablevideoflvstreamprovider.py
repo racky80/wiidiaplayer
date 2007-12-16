@@ -4,6 +4,7 @@ import os.path
 class ConvertableVideoFlvStreamProvider (convertableflvstreamprovider.ConvertableFlvStreamProvider):
     def __init__(self, resourcename):
         convertableflvstreamprovider.ConvertableFlvStreamProvider.__init__(self,resourcename)
+        print "using mplayer"
 
     def getShellConvertingScript(self):
         return "%s/convertvideo.sh"% os.path.dirname(__file__)
