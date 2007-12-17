@@ -1,7 +1,11 @@
 import cStringIO
-import logging, time, os
+import logging, time, os, sys
 from twisted.internet import reactor, protocol, task
-import pyamf
+try:
+    import pyamf
+except ImportError:
+    print """PyAMF is a dependency for wiidiaplayer >r61. Download PyAmf at http://pyamf.org. Revision r627 is known to work"""
+    sys.exit (1)
 import util
 import flvstreamprovider
 
