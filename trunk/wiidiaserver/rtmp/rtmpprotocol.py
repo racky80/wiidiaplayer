@@ -1,5 +1,5 @@
 import cStringIO
-import logging, time, os, sys
+import logging, time, os, sys, os.path
 from twisted.internet import reactor, protocol, task
 try:
     import pyamf
@@ -43,7 +43,8 @@ class RTMPProtocol(protocol.Protocol):
                    COMMANDKIND_PING:4,
                   }
 
-    def __init__(self):
+    def __init__(self, mediadir):
+        self.mediadir = mediadir
         self.input = util.general.FancyReader(util.bufferedstringstream.BufferedStringStream())
         self.output = util.general.FancyWriter(util.bufferedstringstream.BufferedStringStream())
         self.sChannel = {}
@@ -369,9 +370,12 @@ class RTMPProtocol(protocol.Protocol):
     
     def rpcPlay(self, header, callobject):
         logging.info("Play: %s"%(callobject.__repr__()))
-        filename = callobject["argv"][1];
+        relfilename = callobject["argv"][1];
+        relfilename = relfilename[1:] # remove the starting slash
+        mediadir = self.mediadir
+        logging.info("Mediadir : %s"%mediadir)
+        filename = os.path.join(mediadir, relfilename)
         logging.info("Requested file: %s"%filename)
-        filename = "/mnt/media/%s"%filename
         if not os.path.isabs(filename):
             raise Exception("Not an absolute filename: %s"%filename)
         streamid = header["src_dst"]
