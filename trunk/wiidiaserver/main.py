@@ -79,31 +79,6 @@ class GetDir(WiiServerExternalprogramResource):
     def getProcessPassthroughClass(self):
         return ProcessPassthroughprotocolUrlEncoded
 
-class GetInfo(WiiServerExternalprogramResource):
-    def getCommand(self, fullpath):
-        executable='/usr/bin/midentify'
-        return executable, [executable, fullpath]
-
-    def getProcessPassthroughClass(self):
-        return ProcessPassthroughprotocolUrlEncoded
-
-class GetFile(WiiServerExternalprogramResource):
-    def getCommand(self, fullpath):
-        ext=os.path.splitext(fullpath)[1]
-        if ext == "mp3" or ext=="ogg":
-            return self.getAudioRenderCommand(fullpath)
-        else:
-            return self.getVideoRenderCommand(fullpath)
-
-    def getAudioRenderCommand(self, sourcefilename):
-        return '/usr/bin/ffmpeg', ['/usr/bin/ffmpeg', '-i', sourcefilename, '-f', 'flv', '-acodec', 'mp3', '-ab', '192', '-ar', '44100', '-ac', '2', '-']
-
-    def getVideoRenderCommand(self, sourcefilename):
-        return 'convertvideo.sh', ['convertvideo.sh', sourcefilename]
-
-    def getProcessPassthroughClass(self):
-        return ProcessPassthroughprotocol
-    
 def printHelp():
     # Some help information
     print "Usage: main.py -m <mediadir> [-dvh] [-r <rootdir>]"
@@ -277,8 +252,6 @@ def main():
     
     root = static.File(rootdir)
     root.putChild('getdir',GetDir())
-    root.putChild('getfile',GetFile())
-    root.putChild('getinfo',GetInfo())
     root.putChild('feedback',PrintFeedback())
     site = server.Site(root)
     reactor.listenTCP(1935, rtmp.RTMPServerFactory( ))
