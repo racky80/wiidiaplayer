@@ -45,13 +45,15 @@ class ProcessPassthroughprotocolUrlEncoded(ProcessPassthroughprotocol):
 
 class WiiServerExternalprogramResource(resource.Resource):
     isLeaf=True
-    DEFAULTPATH="/mnt/media/"
+    
+    def __init__(self, mediadir):
+        self.mediadir = mediadir;
 
     def render_GET(self, request):
         self.request=request
         self.request.connectionclosed=False
         path = os.path.abspath('/'+os.path.sep.join(request.postpath));
-        fullpath=os.path.abspath(self.DEFAULTPATH+path);
+        fullpath=os.path.abspath(self.mediadir+path);
         processProtocolClass=self.getProcessPassthroughClass()
         processProtocol=processProtocolClass(request);
         ext=os.path.splitext(fullpath)[1]
@@ -208,12 +210,9 @@ def main():
             mediadir = a
     
     # Currently checking what's the best way to pass mediadir through to rtmp
-    #if mediadir:
-        # Send it to the scripts who needs this dir
-    #    mediadir = mediadir
-    #else:
-    #    printHelp()
-    #    sys.exit(0)
+    if not mediadir:
+        printHelp()
+        sys.exit(0)
     
     # We are going to daemonize, first only save the logs:
     if fork:
@@ -251,10 +250,12 @@ def main():
     logging.info("Using %s as rootdir" %rootdir)
     
     root = static.File(rootdir)
-    root.putChild('getdir',GetDir())
+    root.putChild('getdir',GetDir(mediadir))
     root.putChild('feedback',PrintFeedback())
     site = server.Site(root)
-    reactor.listenTCP(1935, rtmp.RTMPServerFactory( ))
+    rtmpServerFactory = rtmp.RTMPServerFactory(mediadir)
+  
+    reactor.listenTCP(1935, rtmpServerFactory)
     reactor.listenTCP(8080, site)
     reactor.run()
 
