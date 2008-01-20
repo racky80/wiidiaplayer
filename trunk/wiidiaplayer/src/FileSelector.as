@@ -34,7 +34,7 @@ class FileSelector extends ItemSelector {
 			if (self.currentpath != newpath) { // some other dir must have been selected in the meantime
 				return
 			}
-			self.showDirContents(Util.parseLS(this.result))
+			self.showDirContents(Util.parseGetDir(this.result))
 		}
 		lv.load(Config.GETDIR_SERVER_URL+currentpath)
 	}
