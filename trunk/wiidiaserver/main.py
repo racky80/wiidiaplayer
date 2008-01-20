@@ -147,11 +147,10 @@ def killPid(pid):
     if pid:
         for j in range(10):
             if not livePid(pid):
-                break
+                return
             os.kill(pid, 15)
             time.sleep(1)
-        else:
-            print "Can't kill process %s" % pid
+        print "Can't kill process %s" % pid
 
 
 def daemonize():

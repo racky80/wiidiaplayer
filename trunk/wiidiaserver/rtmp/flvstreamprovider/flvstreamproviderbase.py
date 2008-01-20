@@ -19,7 +19,7 @@ class FlvStreamProvider:
         cls.PREFERREDPROVIDERS=[
                             fileflvstreamprovider.FileFlvStreamProvider,
                             convertableaudioflvstreamprovider.ConvertableAudioFlvStreamProvider,
-                            convertableffmpegvideoflvstreamprovider.ConvertableFFMpegVideoFlvStreamProvider,
+#                            convertableffmpegvideoflvstreamprovider.ConvertableFFMpegVideoFlvStreamProvider,
                             convertablevideoflvstreamprovider.ConvertableVideoFlvStreamProvider,
                             ]
         for provider in FlvStreamProvider.PREFERREDPROVIDERS:

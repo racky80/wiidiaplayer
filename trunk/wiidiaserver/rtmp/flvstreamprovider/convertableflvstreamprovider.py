@@ -32,7 +32,7 @@ class ConvertableFlvStreamProvider (fileflvstreamprovider.FileFlvStreamProvider)
         if self.convertor:
             self.convertor.kill()
             os.unlink(self.getFileName())
-            logging.info(self.convertor.getoutput())
+            logging.debug(self.convertor.getoutputsofar()) # note: this may not return any output because of caching (non-flushing), if the process has not finished yet
         logging.info("stream deleted")
         
 

@@ -33,6 +33,7 @@ nice -n 2 /usr/bin/mencoder "$1" \
         		-ovc lavc -lavcopts vcodec=flv:vbitrate=2500:autoaspect:vratetol=1000:keyint=1 -ofps $FPS -vf harddup \
         		-o "$2" > /var/log/mencoder/2 2>&1 &
 
+sleep 5
 
 while [ -n "$(getmencoderchildids)" ]; do
 	sleep 1;
