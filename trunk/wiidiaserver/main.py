@@ -4,67 +4,28 @@ from twisted.web import server, resource, static
 from twisted.internet import reactor, protocol, error
 import os, urllib, sys, logging, getopt, errno, time
 import rtmp
+import util, util.minjson
 
 sys.path.append(os.path.dirname(__file__));
 
-
-class ProcessPassthroughprotocol(protocol.ProcessProtocol):
-
-    def __init__(self, request):
-        self.request=request
-        pass
-
-    def connectionMade(self): pass
-
-    def outReceived(self, data):
-        if self.request.connectionclosed:
-            self.transport.closeStdout()
-            print "killed"
-        self.request.write(data)
-        
-    def errReceived(self,data):
-        print ("stderr: %s"%data)
-        
-    def outConnectionLost(self): pass
-    def errConnectionLost(self): pass
-    def inConnectionLost(self): pass
-    
-    def processEnded(self, reason):
-        self.request.finish();
-        print "Process ended: %s"%reason
-
-class ProcessPassthroughprotocolUrlEncoded(ProcessPassthroughprotocol):
-    firstdata=True
-    def outReceived(self, data):
-        if self.firstdata:
-	    self.firstdata=False
-	    dataprefix="result="
-	else:
-	    dataprefix=""
-        ProcessPassthroughprotocol.outReceived(self,dataprefix+urllib.quote(data))
-
-class WiiServerExternalprogramResource(resource.Resource):
+class GetDir(resource.Resource):
     isLeaf=True
     
     def __init__(self, mediadir):
         self.mediadir = mediadir;
 
     def render_GET(self, request):
-        self.request=request
-        self.request.connectionclosed=False
-        path = os.path.abspath('/'+os.path.sep.join(request.postpath));
-        fullpath=os.path.abspath(self.mediadir+path);
-        processProtocolClass=self.getProcessPassthroughClass()
-        processProtocol=processProtocolClass(request);
-        ext=os.path.splitext(fullpath)[1]
-        executable, arg = self.getCommand(fullpath)
-        reactor.spawnProcess(processProtocol, executable, arg)
-        request.connectionLost=self.connectionClosed
-        return server.NOT_DONE_YET
-
-    def connectionClosed(self, reason):
-        self.request.connectionclosed=True
-        print "Help, I'm closed"
+        fullpath=os.path.abspath(os.path.sep.join([self.mediadir]+list(request.postpath)))
+        if not util.general.checkPath(fullpath):
+            return "Illegal path";
+        for dir in os.walk(fullpath):
+            sDirInfo = {'aDir': dir[1], 'aFile':dir[2]}
+            sDirInfo["aDir"].sort();
+            sDirInfo["aFile"].sort();
+            break
+        return 'result='+urllib.quote(util.minjson.write(sDirInfo))
+        
+            
 
 class PrintFeedback(resource.Resource):
     isLeaf=True
@@ -72,14 +33,6 @@ class PrintFeedback(resource.Resource):
         print ("Feedback recieved: %s"%'/'.join(request.postpath))
         return ("Feedback recieved: %s"%request.postpath)
 
-
-class GetDir(WiiServerExternalprogramResource):
-    def getCommand(self, fullpath):
-        executable='/bin/ls'
-        return executable, [executable, '-1l', fullpath]
-
-    def getProcessPassthroughClass(self):
-        return ProcessPassthroughprotocolUrlEncoded
 
 def printHelp():
     # Some help information
