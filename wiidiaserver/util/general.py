@@ -95,3 +95,7 @@ def getBinaryStream(str):
         s.append(("0x%04x  "+format)%(i, hextext, hrtext))
     return "\n".join(s)
  
+def checkPath(path):
+    import os
+    """checks to see that a path is a real absolute path"""
+    return path == os.path.realpath(path)

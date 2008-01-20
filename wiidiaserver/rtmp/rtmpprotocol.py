@@ -376,7 +376,7 @@ class RTMPProtocol(protocol.Protocol):
         logging.info("Mediadir : %s"%mediadir)
         filename = os.path.join(mediadir, relfilename)
         logging.info("Requested file: %s"%filename)
-        if not os.path.isabs(filename):
+        if not util.general.checkPath(filename):
             raise Exception("Not an absolute filename: %s"%filename)
         streamid = header["src_dst"]
         if self.sStream[streamid]["play"] != None: pass # the destructor will be called as soon as it's getting replaced
