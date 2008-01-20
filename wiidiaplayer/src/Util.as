@@ -13,33 +13,19 @@ class Util {
 	/**
 	 * Parses the result of an ls -l, returns an array with entries of the form:
 	 * type: file/dir; name: 	 */
-	static public function parseLS(ls:String):Array {
-		var oLogger:LuminicBox.Log.Logger = new LuminicBox.Log.Logger("UTIL.parseLS");
+	static public function parseGetDir(getdirresult:String):Array {
+		var oLogger:LuminicBox.Log.Logger = new LuminicBox.Log.Logger("UTIL.parseGetDir");
 		oLogger.addPublisher( new LuminicBox.Log.ConsolePublisher() );
-
+		var json:JSON = new JSON();
+		var sDirInfo:Object = json.parse(getdirresult);
 		var asDir:Array = [];
-		var aLine:Array = ls.split("\n");
-		for(var i:Number=1;i<aLine.length;i++) { // ignore the first line "total"
-			var line:String = String(aLine[i])
-			if (line == "") {
-				continue;
-			}
-			var fieldcount:Number = 0;
-			var aPart:Array = line.split(" ");
-			
-			for(var j:Number=0;j<aPart.length;j++) {
-				if (aPart[j] != "") {
-					fieldcount++
-				}
-				if (fieldcount == 9) {
-					// we are now at the beginnig of the name
-					var filename:String = aPart.slice(j).join(" ")
-					var type:String = (line.charAt(0) == 'd'?"dir":"file")
-					asDir.push({type: type, name:filename})
-				}
-			}
+		for(var i:Number=0;i<sDirInfo["aDir"].length;i++) {
+			asDir.push({type: "dir", name: sDirInfo["aDir"][i]})
 		}
-		return asDir;
+		for(var i:Number=0;i<sDirInfo["aFile"].length;i++) {
+			asDir.push({type: "file", name: sDirInfo["aFile"][i]})
+		}
+		return asDir
 	}
 	
 	static public function formatAsTime(timeseconds:Number):String {
